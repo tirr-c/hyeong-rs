@@ -5,5 +5,9 @@ Rust 구현입니다.
 
 ## TODO
 
-- [ ] 해석기 작성
+- [x] 해석기 작성
 - [ ] 실행기 작성
+
+---
+
+[![Build Status](https://travis-ci.org/VBChunguk/hyeong-rs.svg?branch=master)](https://travis-ci.org/VBChunguk/hyeong-rs)
