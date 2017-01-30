@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Instruction {
     op: Operation,
     dots: usize,
@@ -65,7 +65,7 @@ impl Operation {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum HeartTree {
     Heart(usize),
     Return,
