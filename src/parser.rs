@@ -45,14 +45,14 @@ impl Into<char> for HangulStartType {
     fn into(self) -> char {
         match self {
             HangulStartType::Hyeo   => '혀',
-            HangulStartType::Ha     => '혀',
-            HangulStartType::Heu    => '혀',
-            HangulStartType::Hyeong => '혀',
-            HangulStartType::Hang   => '혀',
-            HangulStartType::Hat    => '혀',
-            HangulStartType::Heut   => '혀',
-            HangulStartType::Heup   => '혀',
-            HangulStartType::Heuk   => '혀',
+            HangulStartType::Ha     => '하',
+            HangulStartType::Heu    => '흐',
+            HangulStartType::Hyeong => '형',
+            HangulStartType::Hang   => '항',
+            HangulStartType::Hat    => '핫',
+            HangulStartType::Heut   => '흣',
+            HangulStartType::Heup   => '흡',
+            HangulStartType::Heuk   => '흑',
         }
     }
 }
