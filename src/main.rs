@@ -214,19 +214,58 @@ impl<'a> Iterator for Parser<'a> {
             }
         });
         // hearts
+        let mut current_heart = None;
+        let mut tree = vec![];
+        let mut op_count = 0;
         let hearts = self.token_cache.iter().filter(|token| {
             match **token {
                 Token::Dot | Token::ThreeDots => false,
                 _ => true,
             }
         });
-        // TODO: parse hearts
-        Some(Instruction { op: op, dots: dots, hearts: HeartTree::Nil })
+        for token in hearts {
+            match *token {
+                Token::Heart(id) => {
+                    current_heart = current_heart.or(Some(HeartTree::Heart(id)));
+                },
+                Token::ReturnHeart => {
+                    current_heart = current_heart.or(Some(HeartTree::Return));
+                },
+                Token::ExclamationMark => {
+                    tree.push(current_heart.unwrap_or(HeartTree::Nil));
+                    current_heart = None;
+                    op_count += 1;
+                },
+                Token::QuestionMark => {
+                    tree.push(current_heart.unwrap_or(HeartTree::Nil));
+                    current_heart = None;
+                    for _ in 0..op_count {
+                        let rhs = tree.pop().unwrap();
+                        let lhs = tree.pop().unwrap();
+                        tree.push(HeartTree::Equals(Box::new(lhs), Box::new(rhs)));
+                    }
+                    op_count = 0;
+                },
+                _ => { },
+            }
+        }
+        tree.push(current_heart.unwrap_or(HeartTree::Nil));
+        for _ in 0..op_count {
+            let rhs = tree.pop().unwrap();
+            let lhs = tree.pop().unwrap();
+            tree.push(HeartTree::Equals(Box::new(lhs), Box::new(rhs)));
+        }
+        while tree.len() > 1 {
+            let rhs = tree.pop().unwrap();
+            let lhs = tree.pop().unwrap();
+            tree.push(HeartTree::LessThan(Box::new(lhs), Box::new(rhs)));
+        }
+        Some(Instruction { op: op, dots: dots, hearts: tree.pop().unwrap_or(HeartTree::Nil) })
     }
 }
 
 fn main() {
-    let parser = Parser::from_str("하흐아읏...하아앙....흑..♥.혀엉...");
+    let parser = Parser::from_str("하흐아읏...하아앙....흑..?!♥.혀엉...");
     for op in parser {
         println!("{:?}", op);
     }
