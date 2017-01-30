@@ -1,3 +1,4 @@
+#[derive(Debug)]
 struct Instruction {
     op: Operation,
     dots: usize,
@@ -47,11 +48,13 @@ enum OperationType {
     Duplicate,      // 흑
 }
 
+#[derive(Debug)]
 enum HeartTree {
     Heart(usize),
     Return,
     LessThan(Box<HeartTree>, Box<HeartTree>),
     Equals(Box<HeartTree>, Box<HeartTree>),
+    Nil,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -93,24 +96,63 @@ impl HangulStartType {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+enum Token {
+    Dot,
+    ThreeDots,
+    Heart(usize),
+    ReturnHeart,
+    ExclamationMark,
+    QuestionMark,
+}
+
+const HEART_MARKS: [char; 11] = [
+    '♥', '❤', '💕', '💖', '💗', '💘', '💙', '💚', '💛', '💜', '💝'
+];
+
+impl Token {
+    fn from_char(c: char) -> Option<Self> {
+        match c {
+            '.' => Some(Token::Dot),
+            '\u{2026}' | '\u{22ee}' | '\u{22ef}' => Some(Token::ThreeDots),
+            '\u{2661}' => Some(Token::ReturnHeart),
+            '!' => Some(Token::ExclamationMark),
+            '?' => Some(Token::QuestionMark),
+            _ => HEART_MARKS.iter().position(|&i| i == c).map(|p| Token::Heart(p))
+        }
+    }
+}
+
 struct Parser<'a> {
     code: std::str::Chars<'a>,
+    operation_cache: Option<Operation>,
+    token_cache: std::collections::VecDeque<Token>,
 }
 
 impl<'a> Parser<'a> {
     fn from_str(code: &'a str) -> Self {
-        Parser {
+        let mut parser = Parser {
             code: code.chars(),
-        }
+            operation_cache: None,
+            token_cache: std::collections::VecDeque::new(),
+        };
+        // First run
+        let hangul = parser.parse_hangul();
+        parser.operation_cache = hangul;
+        parser
     }
 
     fn parse_hangul(&mut self) -> Option<Operation> {
+        self.token_cache.clear();
         loop {
             let mut start = None;
             while let Some(c) = self.code.next() {
                 if "형항핫흣흡흑혀하흐".contains(c) {
                     start = HangulStartType::from_char(c);
                     break;
+                }
+                if let Some(token) = Token::from_char(c) {
+                    self.token_cache.push_back(token);
                 }
             }
             let start = match start {
@@ -147,9 +189,45 @@ impl<'a> Parser<'a> {
     }
 }
 
+impl<'a> Iterator for Parser<'a> {
+    type Item = Instruction;
+    fn next(&mut self) -> Option<Self::Item> {
+        let op = match self.operation_cache {
+            Some(op) => op,
+            None => { return None; },
+        };
+        let next_op = self.parse_hangul();
+        self.operation_cache = next_op;
+
+        // dots
+        let tokens = self.token_cache.iter().take_while(|token| {
+            match **token {
+                Token::Dot | Token::ThreeDots => true,
+                _ => false,
+            }
+        });
+        let dots = tokens.fold(0, |i, token| {
+            match *token {
+                Token::Dot => i + 1,
+                Token::ThreeDots => i + 3,
+                _ => i,
+            }
+        });
+        // hearts
+        let hearts = self.token_cache.iter().filter(|token| {
+            match **token {
+                Token::Dot | Token::ThreeDots => false,
+                _ => true,
+            }
+        });
+        // TODO: parse hearts
+        Some(Instruction { op: op, dots: dots, hearts: HeartTree::Nil })
+    }
+}
+
 fn main() {
-    let mut parser = Parser::from_str("하흐아읏...하아앙....");
-    while let Some(op) = parser.parse_hangul() {
+    let parser = Parser::from_str("하흐아읏...하아앙....흑..♥.혀엉...");
+    for op in parser {
         println!("{:?}", op);
     }
 }
