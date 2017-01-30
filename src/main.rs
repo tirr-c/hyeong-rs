@@ -1,11 +1,14 @@
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug)]
-struct Instruction {
+pub struct Instruction {
     op: Operation,
     dots: usize,
     hearts: HeartTree,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 struct Operation {
     op_type: OperationType,
     hangul_count: usize,
@@ -38,7 +41,7 @@ impl Operation {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 enum OperationType {
     Push,           // 형
     Add,            // 항
@@ -49,7 +52,7 @@ enum OperationType {
 }
 
 #[derive(Debug)]
-enum HeartTree {
+pub enum HeartTree {
     Heart(usize),
     Return,
     LessThan(Box<HeartTree>, Box<HeartTree>),
@@ -57,8 +60,8 @@ enum HeartTree {
     Nil,
 }
 
-#[derive(Copy, Clone, Debug)]
-enum HangulStartType {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum HangulStartType {
     Hyeo,
     Ha,
     Heu,
@@ -71,7 +74,7 @@ enum HangulStartType {
 }
 
 impl HangulStartType {
-    fn from_char(c: char) -> Option<Self> {
+    pub fn from_char(c: char) -> Option<Self> {
         match c {
             '혀' => Some(HangulStartType::Hyeo  ),
             '하' => Some(HangulStartType::Ha    ),
@@ -86,7 +89,7 @@ impl HangulStartType {
         }
     }
 
-    fn is_self_ending(&self) -> bool {
+    pub fn is_self_ending(&self) -> bool {
         match *self {
             HangulStartType::Hyeo => false,
             HangulStartType::Ha   => false,
@@ -96,8 +99,8 @@ impl HangulStartType {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
-enum Token {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Token {
     Dot,
     ThreeDots,
     Heart(usize),
@@ -111,7 +114,7 @@ const HEART_MARKS: [char; 11] = [
 ];
 
 impl Token {
-    fn from_char(c: char) -> Option<Self> {
+    pub fn from_char(c: char) -> Option<Self> {
         match c {
             '.' => Some(Token::Dot),
             '\u{2026}' | '\u{22ee}' | '\u{22ef}' => Some(Token::ThreeDots),
@@ -123,14 +126,14 @@ impl Token {
     }
 }
 
-struct Parser<'a> {
+pub struct Parser<'a> {
     code: std::str::Chars<'a>,
     operation_cache: Option<Operation>,
     token_cache: std::collections::VecDeque<Token>,
 }
 
 impl<'a> Parser<'a> {
-    fn from_str(code: &'a str) -> Self {
+    pub fn from_str(code: &'a str) -> Self {
         let mut parser = Parser {
             code: code.chars(),
             operation_cache: None,
