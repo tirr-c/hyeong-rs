@@ -2,3 +2,8 @@ language: rust
 rust:
   - stable
   - beta
+script:
+  - cargo build --verbose
+  - cargo test --verbose
+  - cargo build --features big-rational --verbose
+  - cargo test --features big-rational --verbose
