@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::ops::{Add, Mul, Neg};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg};
 use num::Zero;
 
 #[cfg(feature = "big-rational")]
@@ -109,11 +109,25 @@ impl Add for HyeongRational {
     }
 }
 
+impl AddAssign for HyeongRational {
+    fn add_assign(&mut self, rhs: HyeongRational) {
+        let result = self.clone() + rhs;
+        self.clone_from(&result);
+    }
+}
+
 impl Mul for HyeongRational {
     type Output = Self;
     fn mul(self, rhs: HyeongRational) -> Self::Output {
         if self.is_nan() || rhs.is_nan() { return HyeongRational::NaN; }
         (self.into_rational() * rhs.into_rational()).into()
+    }
+}
+
+impl MulAssign for HyeongRational {
+    fn mul_assign(&mut self, rhs: HyeongRational) {
+        let result = self.clone() * rhs;
+        self.clone_from(&result);
     }
 }
 
@@ -162,7 +176,7 @@ mod tests {
     }
     #[test]
     fn operators() {
-        let half: HyeongRational = Rational::new((1 as isize).into(), (2 as isize).into()).into();
+        let mut half: HyeongRational = Rational::new((1 as isize).into(), (2 as isize).into()).into();
         let one_third: HyeongRational = Rational::new((1 as isize).into(), (3 as isize).into()).into();
         let five_sixth: HyeongRational = Rational::new((5 as isize).into(), (6 as isize).into()).into();
         let one_sixth: HyeongRational = Rational::new((1 as isize).into(), (6 as isize).into()).into();
@@ -175,6 +189,16 @@ mod tests {
         assert!((five_sixth.clone() + nan.clone()).is_nan());
         assert!((nan.clone() * one_third.clone()).is_nan());
         assert!((nan.clone() * nan.clone()).is_nan());
+
+        half += one_third;
+        half *= one_sixth;
+        half += minus_one_sixth;
+        let mut answer: HyeongRational = Rational::new((-1 as isize).into(), (36 as isize).into()).into();
+        assert_eq!(half, answer);
+        half += nan.clone();
+        assert!(half.is_nan());
+        answer *= nan.clone();
+        assert!(answer.is_nan());
     }
     #[test]
     fn recip() {
