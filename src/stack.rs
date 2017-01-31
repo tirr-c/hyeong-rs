@@ -119,7 +119,8 @@ impl<W: Write> HyeongStack for HyeongWriteStack<W> {
             HyeongRational::NaN => self.output_nan(),
             HyeongRational::Rational(r) => {
                 let int = r.floor().to_integer();
-                if int >= 0 {
+                let zero = (0 as isize).into();
+                if int >= zero {
                     self.output_unicode(int)
                 } else {
                     write!(&mut self.inner, "{}", -int)
