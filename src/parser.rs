@@ -57,39 +57,6 @@ impl Into<char> for HangulStartType {
     }
 }
 
-#[cfg(test)]
-#[test]
-fn hangul_start_type_from_char() {
-    assert_eq!(HangulStartType::from_char('혀'), Some(HangulStartType::Hyeo));
-    assert_eq!(HangulStartType::from_char('하'), Some(HangulStartType::Ha));
-    assert_eq!(HangulStartType::from_char('흐'), Some(HangulStartType::Heu));
-    assert_eq!(HangulStartType::from_char('형'), Some(HangulStartType::Hyeong));
-    assert_eq!(HangulStartType::from_char('항'), Some(HangulStartType::Hang));
-    assert_eq!(HangulStartType::from_char('핫'), Some(HangulStartType::Hat));
-    assert_eq!(HangulStartType::from_char('흣'), Some(HangulStartType::Heut));
-    assert_eq!(HangulStartType::from_char('흡'), Some(HangulStartType::Heup));
-    assert_eq!(HangulStartType::from_char('흑'), Some(HangulStartType::Heuk));
-    assert_eq!(HangulStartType::from_char('엉'), None);
-    assert_eq!(HangulStartType::from_char('앙'), None);
-    assert_eq!(HangulStartType::from_char('앗'), None);
-    assert_eq!(HangulStartType::from_char('.'), None);
-    assert_eq!(HangulStartType::from_char('?'), None);
-    assert_eq!(HangulStartType::from_char('♥'), None);
-}
-
-#[cfg(test)]
-#[test]
-fn hangul_start_type_self_ending() {
-    assert!(!  HangulStartType::Hyeo.is_self_ending());
-    assert!(!    HangulStartType::Ha.is_self_ending());
-    assert!(!   HangulStartType::Heu.is_self_ending());
-    assert!( HangulStartType::Hyeong.is_self_ending());
-    assert!(   HangulStartType::Hang.is_self_ending());
-    assert!(    HangulStartType::Hat.is_self_ending());
-    assert!(   HangulStartType::Heut.is_self_ending());
-    assert!(   HangulStartType::Heup.is_self_ending());
-    assert!(   HangulStartType::Heuk.is_self_ending());
-}
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Token {
     Dot,
@@ -116,33 +83,6 @@ impl Token {
             _ => HEART_MARKS.iter().position(|&i| i == c).map(|p| Token::Heart(p))
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn token_from_char() {
-    assert_eq!(Token::from_char('.'), Some(Token::Dot));
-    assert_eq!(Token::from_char('!'), Some(Token::ExclamationMark));
-    assert_eq!(Token::from_char('?'), Some(Token::QuestionMark));
-    assert_eq!(Token::from_char('\u{2026}'), Some(Token::ThreeDots));
-    assert_eq!(Token::from_char('\u{22ee}'), Some(Token::ThreeDots));
-    assert_eq!(Token::from_char('\u{22ef}'), Some(Token::ThreeDots));
-    assert_eq!(Token::from_char('\u{2661}'), Some(Token::ReturnHeart));
-}
-
-#[cfg(test)]
-#[test]
-fn token_from_char_hearts() {
-    // marker heart symbol used in hyeong-lang
-    for (i, c) in HEART_MARKS.iter().enumerate() {
-        assert_eq!(Token::from_char(*c), Some(Token::Heart(i)));
-    }
-    // white heart suit
-    assert_eq!(Token::from_char('\u{2661}'), Some(Token::ReturnHeart));
-
-    // some random hearts
-    assert_eq!(Token::from_char('\u{2765}'), None);
-    assert_eq!(Token::from_char('\u{1f49e}'), None);
 }
 
 
@@ -288,191 +228,257 @@ impl<'a> Iterator for Parser<'a> {
 }
 
 #[cfg(test)]
-#[test]
-fn parser_simple() {
-    let mut parser = Parser::from_str("혀엉...");
-    assert_eq!(
-        parser.next(),
-        Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 2), 3, HeartTree::Nil))
-        );
-    assert_eq!(parser.next(), None);
-}
-
-#[cfg(test)]
 mod tests {
-    use super::{Parser, HEART_MARKS};
-    use super::super::structure::{Operation, Instruction, HeartTree};
+    mod hangul_start_type {
+        use super::super::HangulStartType;
 
-    #[test]
-    fn parser_self_ending() {
-        let mut parser = Parser::from_str("형 항. 핫... 흡.. 흑. 흣.....");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('형', None, 1), 0, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('항', None, 1), 1, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('핫', None, 1), 3, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흡', None, 1), 2, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흑', None, 1), 1, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흣', None, 1), 5, HeartTree::Nil))
-            );
-        assert_eq!(parser.next(), None);
+        #[test]
+        fn from_char() {
+            assert_eq!(HangulStartType::from_char('혀'), Some(HangulStartType::Hyeo));
+            assert_eq!(HangulStartType::from_char('하'), Some(HangulStartType::Ha));
+            assert_eq!(HangulStartType::from_char('흐'), Some(HangulStartType::Heu));
+            assert_eq!(HangulStartType::from_char('형'), Some(HangulStartType::Hyeong));
+            assert_eq!(HangulStartType::from_char('항'), Some(HangulStartType::Hang));
+            assert_eq!(HangulStartType::from_char('핫'), Some(HangulStartType::Hat));
+            assert_eq!(HangulStartType::from_char('흣'), Some(HangulStartType::Heut));
+            assert_eq!(HangulStartType::from_char('흡'), Some(HangulStartType::Heup));
+            assert_eq!(HangulStartType::from_char('흑'), Some(HangulStartType::Heuk));
+            assert_eq!(HangulStartType::from_char('엉'), None);
+            assert_eq!(HangulStartType::from_char('앙'), None);
+            assert_eq!(HangulStartType::from_char('앗'), None);
+            assert_eq!(HangulStartType::from_char('.'), None);
+            assert_eq!(HangulStartType::from_char('?'), None);
+            assert_eq!(HangulStartType::from_char('♥'), None);
+        }
+
+        #[test]
+        fn self_ending() {
+            assert!(!  HangulStartType::Hyeo.is_self_ending());
+            assert!(!    HangulStartType::Ha.is_self_ending());
+            assert!(!   HangulStartType::Heu.is_self_ending());
+            assert!( HangulStartType::Hyeong.is_self_ending());
+            assert!(   HangulStartType::Hang.is_self_ending());
+            assert!(    HangulStartType::Hat.is_self_ending());
+            assert!(   HangulStartType::Heut.is_self_ending());
+            assert!(   HangulStartType::Heup.is_self_ending());
+            assert!(   HangulStartType::Heuk.is_self_ending());
+        }
     }
 
-    #[test]
-    fn parser_noop() {
-        let mut parser = Parser::from_str("흐으응... 너무 커엇...");
-        assert_eq!(parser.next(), None);
+    mod token {
+        use super::super::{Token, HEART_MARKS};
+
+        #[test]
+        fn from_char() {
+            assert_eq!(Token::from_char('.'), Some(Token::Dot));
+            assert_eq!(Token::from_char('!'), Some(Token::ExclamationMark));
+            assert_eq!(Token::from_char('?'), Some(Token::QuestionMark));
+            assert_eq!(Token::from_char('\u{2026}'), Some(Token::ThreeDots));
+            assert_eq!(Token::from_char('\u{22ee}'), Some(Token::ThreeDots));
+            assert_eq!(Token::from_char('\u{22ef}'), Some(Token::ThreeDots));
+            assert_eq!(Token::from_char('\u{2661}'), Some(Token::ReturnHeart));
+        }
+
+        #[test]
+        fn from_char_hearts() {
+            // marker heart symbol used in hyeong-lang
+            for (i, c) in HEART_MARKS.iter().enumerate() {
+                assert_eq!(Token::from_char(*c), Some(Token::Heart(i)));
+            }
+            // white heart suit
+            assert_eq!(Token::from_char('\u{2661}'), Some(Token::ReturnHeart));
+
+            // some random hearts
+            assert_eq!(Token::from_char('\u{2765}'), None);
+            assert_eq!(Token::from_char('\u{1f49e}'), None);
+        }
     }
 
-    #[test]
-    fn parser_multiple() {
-        let mut parser = Parser::from_str("혀엉... 흑. 흐읏..... 하아아앙...");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 2), 3, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흑', None, 1), 1, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 2), 5, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('하', Some('앙'), 4), 3, HeartTree::Nil))
-            );
-        assert_eq!(parser.next(), None);
-    }
+    mod parser {
+        use super::super::{Parser, HEART_MARKS};
+        use super::super::super::structure::{Operation, Instruction, HeartTree};
 
-    #[test]
-    fn parser_hangul_syllables() {
-        // WHAT AM I DOING
-        let mut parser = Parser::from_str("혀내 이름은 메구밍!엉... 흐아크 위저드를 생업으로 삼고 있으며읍..... 최강의 공격마법, 하폭렬마법앙....을 흐으으... 펼치는 자아읏...!");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 9), 3, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흐', Some('읍'), 17), 5, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('하', Some('앙'), 6), 4, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 9), 3,
-            HeartTree::Equals(Box::new(HeartTree::Nil), Box::new(HeartTree::Nil))))
-            );
-        assert_eq!(parser.next(), None);
-    }
+        #[test]
+        fn simple() {
+            let mut parser = Parser::from_str("혀엉...");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 2), 3, HeartTree::Nil))
+                );
+            assert_eq!(parser.next(), None);
+        }
 
-    #[test]
-    fn parser_very_long_hangul() {
-        let mut parser = Parser::from_str("혀하앙... 흐으읏.. 흡 흐윽...... 혀어어엉.......");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 13), 7, HeartTree::Nil))
-            );
-        assert_eq!(parser.next(), None);
+        #[test]
+        fn self_ending() {
+            let mut parser = Parser::from_str("형 항. 핫... 흡.. 흑. 흣.....");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('형', None, 1), 0, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('항', None, 1), 1, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('핫', None, 1), 3, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흡', None, 1), 2, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흑', None, 1), 1, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흣', None, 1), 5, HeartTree::Nil))
+                );
+            assert_eq!(parser.next(), None);
+        }
 
-        // Testcase from https://github.com/xnuk/hyeong-testcases
-        let mut parser = Parser::from_str("혀일....이삼사오육앙♥앗?!읏♡읍...엉");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 12), 0, HeartTree::Nil))
-            );
-        assert_eq!(parser.next(), None);
-    }
+        #[test]
+        fn noop() {
+            let mut parser = Parser::from_str("흐으응... 너무 커엇...");
+            assert_eq!(parser.next(), None);
+        }
 
-    #[test]
-    fn parser_endless_hangul() {
-        let mut parser = Parser::from_str("혀형하앙... 흐으읏.. 흡 흐윽...... 하앗.");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('형', None, 1), 0, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('하', Some('앙'), 2), 3, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 3), 2, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흡', None, 1), 0, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('흐', Some('윽'), 2), 6, HeartTree::Nil))
-            );
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 1, HeartTree::Nil))
-            );
-        assert_eq!(parser.next(), None);
-    }
+        #[test]
+        fn multiple() {
+            let mut parser = Parser::from_str("혀엉... 흑. 흐읏..... 하아아앙...");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 2), 3, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흑', None, 1), 1, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 2), 5, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앙'), 4), 3, HeartTree::Nil))
+                );
+            assert_eq!(parser.next(), None);
+        }
 
-    #[test]
-    fn parser_triple_dots() {
-        // Testcase from https://github.com/xnuk/hyeong-testcases
-        let mut parser = Parser::from_str("하앗. … ⋯ ⋮");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 10, HeartTree::Nil))
-            );
-        assert_eq!(parser.next(), None);
-    }
+        #[test]
+        fn hangul_syllables() {
+            // WHAT AM I DOING
+            let mut parser = Parser::from_str("혀내 이름은 메구밍!엉... 흐아크 위저드를 생업으로 삼고 있으며읍..... 최강의 공격마법, 하폭렬마법앙....을 흐으으... 펼치는 자아읏...!");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 9), 3, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흐', Some('읍'), 17), 5, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앙'), 6), 4, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 9), 3,
+                HeartTree::Equals(Box::new(HeartTree::Nil), Box::new(HeartTree::Nil))))
+                );
+            assert_eq!(parser.next(), None);
+        }
 
-    #[test]
-    fn parser_hearts() {
-        let black_heart_suit_idx = HEART_MARKS.iter().position(|c| *c == '♥').unwrap();
-        let sparkling_heart_idx = HEART_MARKS.iter().position(|c| *c == '💖').unwrap();
+        #[test]
+        fn very_long_hangul() {
+            let mut parser = Parser::from_str("혀하앙... 흐으읏.. 흡 흐윽...... 혀어어엉.......");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 13), 7, HeartTree::Nil))
+                );
+            assert_eq!(parser.next(), None);
 
-        // Testcase from https://github.com/xnuk/hyeong-testcases
-        let mut parser = Parser::from_str("하앗....♥♡!");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 4,
-            HeartTree::Equals(
-                Box::new(HeartTree::Heart(black_heart_suit_idx)),
-                Box::new(HeartTree::Nil)
-                )))
-            );
-        assert_eq!(parser.next(), None);
+            // Testcase from https://github.com/xnuk/hyeong-testcases
+            let mut parser = Parser::from_str("혀일....이삼사오육앙♥앗?!읏♡읍...엉");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 12), 0, HeartTree::Nil))
+                );
+            assert_eq!(parser.next(), None);
+        }
 
-        let mut parser = Parser::from_str("하아앗.. . ? ♥ ! 💖");
-        assert_eq!(
-            parser.next(),
-            Some(Instruction::new(Operation::from_chars('하', Some('앗'), 3), 3,
-            HeartTree::LessThan(
-                Box::new(HeartTree::Nil),
-                Box::new(HeartTree::Equals(
-                        Box::new(HeartTree::Heart(black_heart_suit_idx)),
-                        Box::new(HeartTree::Heart(sparkling_heart_idx))
-                        ))
-                )))
-            );
-        assert_eq!(parser.next(), None);
+        #[test]
+        fn endless_hangul() {
+            let mut parser = Parser::from_str("혀형하앙... 흐으읏.. 흡 흐윽...... 하앗.");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('형', None, 1), 0, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앙'), 2), 3, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 3), 2, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흡', None, 1), 0, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흐', Some('윽'), 2), 6, HeartTree::Nil))
+                );
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 1, HeartTree::Nil))
+                );
+            assert_eq!(parser.next(), None);
+        }
+
+        #[test]
+        fn triple_dots() {
+            // Testcase from https://github.com/xnuk/hyeong-testcases
+            let mut parser = Parser::from_str("하앗. … ⋯ ⋮");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 10, HeartTree::Nil))
+                );
+            assert_eq!(parser.next(), None);
+        }
+
+        #[test]
+        fn hearts() {
+            let black_heart_suit_idx = HEART_MARKS.iter().position(|c| *c == '♥').unwrap();
+            let sparkling_heart_idx = HEART_MARKS.iter().position(|c| *c == '💖').unwrap();
+
+            // Testcase from https://github.com/xnuk/hyeong-testcases
+            let mut parser = Parser::from_str("하앗....♥♡!");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 4,
+                HeartTree::Equals(
+                    Box::new(HeartTree::Heart(black_heart_suit_idx)),
+                    Box::new(HeartTree::Nil)
+                    )))
+                );
+            assert_eq!(parser.next(), None);
+
+            let mut parser = Parser::from_str("하아앗.. . ? ♥ ! 💖");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 3), 3,
+                HeartTree::LessThan(
+                    Box::new(HeartTree::Nil),
+                    Box::new(HeartTree::Equals(
+                            Box::new(HeartTree::Heart(black_heart_suit_idx)),
+                            Box::new(HeartTree::Heart(sparkling_heart_idx))
+                            ))
+                    )))
+                );
+            assert_eq!(parser.next(), None);
+        }
     }
 }
