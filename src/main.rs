@@ -1,5 +1,10 @@
+extern crate num;
+
 mod structure;
 mod parser;
+mod utf8;
+mod rational;
+mod stack;
 use self::parser::Parser;
 
 fn main() {

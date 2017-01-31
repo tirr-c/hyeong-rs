@@ -3,4 +3,8 @@ name = "hyeong"
 version = "0.1.0"
 authors = ["VBChunguk <chwo9843@gmail.com>"]
 
+[features]
+big-rational = []
+
 [dependencies]
+num = "0.1.36"
