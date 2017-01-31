@@ -176,4 +176,16 @@ mod tests {
         assert!((nan.clone() * one_third.clone()).is_nan());
         assert!((nan.clone() * nan.clone()).is_nan());
     }
+    #[test]
+    fn recip() {
+        let half: HyeongRational = Rational::new((1 as isize).into(), (2 as isize).into()).into();
+        let two = HyeongRational::from_u32(2);
+        let zero = HyeongRational::from_u32(0);
+        let nan = HyeongRational::NaN;
+
+        assert_eq!(half.recip(), two);
+        assert_eq!(two.recip(), half);
+        assert!(zero.recip().is_nan());
+        assert!(nan.recip().is_nan());
+    }
 }
