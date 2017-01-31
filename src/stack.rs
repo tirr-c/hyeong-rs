@@ -231,6 +231,44 @@ impl<'a> StackManager<'a> {
         stack_to.push_one(sum);
     }
 
+    pub fn neg(&mut self, count: usize, to: usize) {
+        let sum = {
+            let mut temp = vec![];
+            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            for _ in 0..count {
+                temp.push(-stack_from.pop_one());
+            }
+            let sum = temp.iter().fold(HyeongRational::from_u32(0), |a, b| a + b.clone());
+            let mut temp = temp.into_iter();
+            while let Some(r) = temp.next_back() {
+                stack_from.push_one(r);
+            }
+            sum
+        };
+        self.make_stack(to);
+        let stack_to = self.stacks.get_mut(&to).unwrap();
+        stack_to.push_one(sum);
+    }
+
+    pub fn recip(&mut self, count: usize, to: usize) {
+        let sum = {
+            let mut temp = vec![];
+            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            for _ in 0..count {
+                temp.push(stack_from.pop_one().recip());
+            }
+            let sum = temp.iter().fold(HyeongRational::from_u32(1), |a, b| a * b.clone());
+            let mut temp = temp.into_iter();
+            while let Some(r) = temp.next_back() {
+                stack_from.push_one(r);
+            }
+            sum
+        };
+        self.make_stack(to);
+        let stack_to = self.stacks.get_mut(&to).unwrap();
+        stack_to.push_one(sum);
+    }
+
     pub fn duplicate(&mut self, count: usize, into: usize) {
         let value = {
             let stack_from = self.stacks.get_mut(&self.selected).unwrap();
@@ -350,5 +388,38 @@ mod tests {
         }
         assert_eq!(&buf[..], "A".as_bytes());
         assert_eq!(&buf_err[..], "너무 커엇...\u{2665}".as_bytes());
+    }
+
+    #[test]
+    fn stack_manager_mul_recip() {
+        use super::{HyeongReadStack, HyeongWriteStack, StackWrapper, StackManager};
+
+        let test_str = "밯망희";
+        let mut buf = vec![];
+        let mut buf_err = vec![];
+        {
+            let stdin =  HyeongReadStack::new(test_str.as_bytes());
+            let mut stdout = HyeongWriteStack::new(&mut buf);
+            let mut stderr = HyeongWriteStack::new(&mut buf_err);
+            let stdin = StackWrapper::from_owned(Box::new(stdin));
+            let stdout = StackWrapper::from_ref_mut(&mut stdout);
+            let stderr = StackWrapper::from_ref_mut(&mut stderr);
+            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
+
+            manager.push(4, 2);
+            manager.push(2, 3);
+            manager.recip(1, 4);
+            manager.mul(2, 3);
+            manager.neg(1, 2);
+            manager.push(1, 0);
+            manager.duplicate(1, 0);
+            manager.neg(5, 2);
+            manager.add(1, 4);
+            manager.add(1, 1);
+            manager.add(1, 1);
+            manager.add(1, 1);
+        }
+        assert_eq!(&buf[..], "481754758155148".as_bytes());
+        assert_eq!(&buf_err[..], "2너무 커엇...".as_bytes());
     }
 }
