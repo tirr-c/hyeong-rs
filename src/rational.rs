@@ -25,6 +25,16 @@ impl HyeongRational {
         let r = Rational::from_integer(value as isize);
         HyeongRational::Rational(r)
     }
+    #[cfg(feature = "big-rational")]
+    pub fn from_usize(value: usize) -> HyeongRational {
+        let r = Rational::from_integer(value.into());
+        HyeongRational::Rational(r)
+    }
+    #[cfg(not(feature = "big-rational"))]
+    pub fn from_usize(value: usize) -> HyeongRational {
+        let r = Rational::from_integer(value as isize);
+        HyeongRational::Rational(r)
+    }
     pub fn is_nan(&self) -> bool {
         match self {
             &HyeongRational::NaN => true,

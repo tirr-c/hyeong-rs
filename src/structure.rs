@@ -13,6 +13,26 @@ impl Instruction {
             hearts: hearts,
         }
     }
+
+    pub fn operation_type(&self) -> OperationType {
+        self.op.op_type
+    }
+
+    pub fn hangul_count(&self) -> usize {
+        self.op.hangul_count
+    }
+
+    pub fn dots(&self) -> usize {
+        self.dots
+    }
+
+    pub fn hangul_times_dots(&self) -> usize {
+        self.op.hangul_count * self.dots
+    }
+
+    pub fn heart_tree(&self) -> &HeartTree {
+        &self.hearts
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -22,7 +42,7 @@ pub struct Operation {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum OperationType {
+pub enum OperationType {
     Push,           // 형
     Add,            // 항
     Multiply,       // 핫

@@ -2,6 +2,7 @@ use std;
 use std::io::{self, Read, Write};
 use num::traits::cast::{ToPrimitive, FromPrimitive};
 use num::rational::Ratio;
+use super::structure::HeartTree;
 use super::rational::{Rational, HyeongRational};
 use super::utf8::read_codepoint;
 
@@ -164,6 +165,13 @@ impl<'a> HyeongStack for StackWrapper<'a> {
 }
 
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum HeartResult {
+    Heart(usize),
+    Return,
+    Nil,
+}
+
 use std::collections::BTreeMap;
 pub struct StackManager<'a> {
     stacks: BTreeMap<usize, StackWrapper<'a>>,
@@ -281,6 +289,46 @@ impl<'a> StackManager<'a> {
         for _ in 0..count {
             stack_to.push_one(value.clone());
         }
+    }
+
+    pub fn process_hearts(&mut self, heart: &HeartTree, target: usize) -> HeartResult {
+        match heart {
+            &HeartTree::Heart(id) => HeartResult::Heart(id),
+            &HeartTree::Return => HeartResult::Return,
+            &HeartTree::Nil => HeartResult::Nil,
+            &HeartTree::LessThan(ref l, ref r) => {
+                if self.stack_less_than(target) {
+                    self.process_hearts(l, target)
+                } else {
+                    self.process_hearts(r, target)
+                }
+            },
+            &HeartTree::Equals(ref l, ref r) => {
+                if self.stack_equals(target) {
+                    self.process_hearts(l, target)
+                } else {
+                    self.process_hearts(r, target)
+                }
+            },
+        }
+    }
+
+    fn stack_less_than(&mut self, target: usize) -> bool {
+        let target = HyeongRational::from_usize(target);
+        let value = {
+            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            stack_from.pop_one()
+        };
+        value < target
+    }
+
+    fn stack_equals(&mut self, target: usize) -> bool {
+        let target = HyeongRational::from_usize(target);
+        let value = {
+            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            stack_from.pop_one()
+        };
+        value == target
     }
 
     fn select(&mut self, id: usize) {

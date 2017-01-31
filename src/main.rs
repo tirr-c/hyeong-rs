@@ -5,6 +5,7 @@ mod parser;
 mod utf8;
 mod rational;
 mod stack;
+mod processor;
 use self::parser::Parser;
 
 fn main() {
