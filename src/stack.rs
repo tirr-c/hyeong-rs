@@ -203,6 +203,34 @@ impl<'a> StackManager<'a> {
         self.stacks.get_mut(&self.selected).unwrap().push_one(value.into());
     }
 
+    pub fn add(&mut self, count: usize, to: usize) {
+        let sum = {
+            let mut sum = HyeongRational::from_u32(0);
+            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            for _ in 0..count {
+                sum += stack_from.pop_one();
+            }
+            sum
+        };
+        self.make_stack(to);
+        let stack_to = self.stacks.get_mut(&to).unwrap();
+        stack_to.push_one(sum);
+    }
+
+    pub fn mul(&mut self, count: usize, to: usize) {
+        let sum = {
+            let mut sum = HyeongRational::from_u32(1);
+            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            for _ in 0..count {
+                sum *= stack_from.pop_one();
+            }
+            sum
+        };
+        self.make_stack(to);
+        let stack_to = self.stacks.get_mut(&to).unwrap();
+        stack_to.push_one(sum);
+    }
+
     pub fn duplicate(&mut self, count: usize, into: usize) {
         let value = {
             let stack_from = self.stacks.get_mut(&self.selected).unwrap();
@@ -218,7 +246,11 @@ impl<'a> StackManager<'a> {
     }
 
     fn select(&mut self, id: usize) {
+        self.make_stack(id);
         self.selected = id;
+    }
+
+    fn make_stack(&mut self, id: usize) {
         if self.stacks.contains_key(&id) { return; }
         let new_stack: Box<HyeongStack> = Box::new(vec![]);
         self.stacks.insert(id, StackWrapper::from_owned(new_stack));
@@ -283,9 +315,40 @@ mod tests {
             let stderr = StackWrapper::from_ref_mut(&mut stderr);
             let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
 
-            manager.push(5, 13); // 혀어어어엉.............
-            manager.duplicate(3, 1);
+            manager.push(5, 13);     // 혀어어어엉.............
+            manager.duplicate(3, 1); // 흐으윽.
         }
         assert_eq!(&buf[..], "AAA".as_bytes());
+    }
+
+    #[test]
+    fn stack_manager_add_mul() {
+        use super::{HyeongReadStack, HyeongWriteStack, StackWrapper, StackManager};
+
+        let test_str = "A";
+        let mut buf = vec![];
+        let mut buf_err = vec![];
+        {
+            let stdin =  HyeongReadStack::new(test_str.as_bytes());
+            let mut stdout = HyeongWriteStack::new(&mut buf);
+            let mut stderr = HyeongWriteStack::new(&mut buf_err);
+            let stdin = StackWrapper::from_owned(Box::new(stdin));
+            let stdout = StackWrapper::from_ref_mut(&mut stdout);
+            let stderr = StackWrapper::from_ref_mut(&mut stderr);
+            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
+
+            manager.duplicate(1, 0); // 흑
+            manager.add(1, 2);       // 항..
+            manager.add(1, 1);       // 항.
+            manager.push(1, 1);      // 형.
+            manager.push(1, 7);      // 형.......
+            manager.push(2, 2);      // 혀엉..
+            manager.push(1, 13);     // 형.............
+            manager.push(3, 9);      // 혀어엉.........
+            manager.mul(4, 0);       // 하아아아아앗
+            manager.add(2, 2);       // 하앙..
+        }
+        assert_eq!(&buf[..], "A".as_bytes());
+        assert_eq!(&buf_err[..], "너무 커엇...\u{2665}".as_bytes());
     }
 }
