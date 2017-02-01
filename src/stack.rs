@@ -23,25 +23,25 @@ impl HyeongStack for Vec<HyeongRational> {
 }
 
 
-struct HyeongReadStack<R> {
+pub struct HyeongReadStack<R> {
     inner: R,
     stack: Vec<HyeongRational>,
 }
 
 impl<R> HyeongReadStack<R> {
-    fn new(inner: R) -> Self {
+    pub fn new(inner: R) -> Self {
         HyeongReadStack {
             inner: inner,
             stack: vec![],
         }
     }
-    fn into_inner(self) -> R {
+    pub fn into_inner(self) -> R {
         self.inner
     }
 }
 
 impl HyeongReadStack<std::io::Stdin> {
-    fn from_stdin() -> Self {
+    pub fn from_stdin() -> Self {
         HyeongReadStack {
             inner: std::io::stdin(),
             stack: vec![],
@@ -134,16 +134,16 @@ impl<W: Write> HyeongStack for HyeongWriteStack<W> {
 }
 
 
-enum StackWrapper<'a> {
+pub enum StackWrapper<'a> {
     Owned(Box<HyeongStack>),
     Borrowed(&'a mut HyeongStack),
 }
 
 impl<'a> StackWrapper<'a> {
-    fn from_owned(stack: Box<HyeongStack>) -> Self {
+    pub fn from_owned(stack: Box<HyeongStack>) -> Self {
         StackWrapper::Owned(stack)
     }
-    fn from_ref_mut(stack: &'a mut HyeongStack) -> Self {
+    pub fn from_ref_mut(stack: &'a mut HyeongStack) -> Self {
         StackWrapper::Borrowed(stack)
     }
 }
@@ -180,10 +180,10 @@ pub struct StackManager<'a> {
 }
 
 impl<'a> StackManager<'a> {
-    fn from_stacks(stdin:  StackWrapper<'a>,
-                   stdout: StackWrapper<'a>,
-                   stderr: StackWrapper<'a>
-                  ) -> Self {
+    pub fn from_stacks(stdin:  StackWrapper<'a>,
+                       stdout: StackWrapper<'a>,
+                       stderr: StackWrapper<'a>
+                      ) -> Self {
         let mut stacks = BTreeMap::new();
         stacks.insert(0, stdin);
         stacks.insert(1, stdout);
@@ -199,9 +199,9 @@ impl<'a> StackManager<'a> {
     }
 
     pub fn new() -> Self {
-        let stdin = HyeongReadStack::new(std::io::stdin());
-        let stdout = HyeongWriteStack::new(std::io::stdout());
-        let stderr = HyeongWriteStack::new(std::io::stderr());
+        let stdin = HyeongReadStack::from_stdin();
+        let stdout = HyeongWriteStack::from_stdout();
+        let stderr = HyeongWriteStack::from_stderr();
         StackManager::from_stacks(
             StackWrapper::from_owned(Box::new(stdin)),
             StackWrapper::from_owned(Box::new(stdout)),
