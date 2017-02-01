@@ -83,6 +83,22 @@ impl Operation {
             }, hangul_count: 1 }
         }
     }
+
+    #[cfg(test)]
+    pub fn from_single_char(op: char, count: usize) -> Self {
+        Operation {
+            op_type: match op {
+                '형' => OperationType::Push,
+                '항' => OperationType::Add,
+                '핫' => OperationType::Multiply,
+                '흣' => OperationType::Negate,
+                '흡' => OperationType::Reciprocate,
+                '흑' => OperationType::Duplicate,
+                _    => panic!("Invalid character")
+            },
+            hangul_count: count,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

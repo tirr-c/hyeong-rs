@@ -303,7 +303,7 @@ mod tests {
             let mut parser = Parser::from_str("혀엉...");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 2), 3, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('형', 2), 3, HeartTree::Nil))
                 );
             assert_eq!(parser.next(), None);
         }
@@ -313,27 +313,27 @@ mod tests {
             let mut parser = Parser::from_str("형 항. 핫... 흡.. 흑. 흣.....");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('형', None, 1), 0, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('형', 1), 0, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('항', None, 1), 1, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('항', 1), 1, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('핫', None, 1), 3, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('핫', 1), 3, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흡', None, 1), 2, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흡', 1), 2, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흑', None, 1), 1, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흑', 1), 1, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흣', None, 1), 5, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흣', 1), 5, HeartTree::Nil))
                 );
             assert_eq!(parser.next(), None);
         }
@@ -349,19 +349,19 @@ mod tests {
             let mut parser = Parser::from_str("혀엉... 흑. 흐읏..... 하아아앙...");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 2), 3, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('형', 2), 3, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흑', None, 1), 1, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흑', 1), 1, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 2), 5, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흣', 2), 5, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앙'), 4), 3, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('항', 4), 3, HeartTree::Nil))
                 );
             assert_eq!(parser.next(), None);
         }
@@ -372,19 +372,19 @@ mod tests {
             let mut parser = Parser::from_str("혀내 이름은 메구밍!엉... 흐아크 위저드를 생업으로 삼고 있으며읍..... 최강의 공격마법, 하폭렬마법앙....을 흐으으... 펼치는 자아읏...!");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 9), 3, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('형', 9), 3, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흐', Some('읍'), 17), 5, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흡', 17), 5, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앙'), 6), 4, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('항', 6), 4, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 9), 3,
+                Some(Instruction::new(Operation::from_single_char('흣', 9), 3,
                 HeartTree::Equals(Box::new(HeartTree::Nil), Box::new(HeartTree::Nil))))
                 );
             assert_eq!(parser.next(), None);
@@ -395,7 +395,7 @@ mod tests {
             let mut parser = Parser::from_str("혀하앙... 흐으읏.. 흡 흐윽...... 혀어어엉.......");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 13), 7, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('형', 13), 7, HeartTree::Nil))
                 );
             assert_eq!(parser.next(), None);
 
@@ -403,7 +403,7 @@ mod tests {
             let mut parser = Parser::from_str("혀일....이삼사오육앙♥앗?!읏♡읍...엉");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('혀', Some('엉'), 12), 0, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('형', 12), 0, HeartTree::Nil))
                 );
             assert_eq!(parser.next(), None);
         }
@@ -413,27 +413,27 @@ mod tests {
             let mut parser = Parser::from_str("혀형하앙... 흐으읏.. 흡 흐윽...... 하앗.");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('형', None, 1), 0, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('형', 1), 0, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앙'), 2), 3, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('항', 2), 3, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 3), 2, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흣', 3), 2, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흡', None, 1), 0, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흡', 1), 0, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흐', Some('윽'), 2), 6, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('흑', 2), 6, HeartTree::Nil))
                 );
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 1, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('핫', 2), 1, HeartTree::Nil))
                 );
             assert_eq!(parser.next(), None);
         }
@@ -444,7 +444,7 @@ mod tests {
             let mut parser = Parser::from_str("하앗. … ⋯ ⋮");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 10, HeartTree::Nil))
+                Some(Instruction::new(Operation::from_single_char('핫', 2), 10, HeartTree::Nil))
                 );
             assert_eq!(parser.next(), None);
         }
@@ -458,7 +458,7 @@ mod tests {
             let mut parser = Parser::from_str("하앗....♥♡!");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 2), 4,
+                Some(Instruction::new(Operation::from_single_char('핫', 2), 4,
                 HeartTree::Equals(
                     Box::new(HeartTree::Heart(black_heart_suit_idx)),
                     Box::new(HeartTree::Nil)
@@ -469,7 +469,7 @@ mod tests {
             let mut parser = Parser::from_str("하아앗.. . ? ♥ ! 💖");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 3), 3,
+                Some(Instruction::new(Operation::from_single_char('핫', 3), 3,
                 HeartTree::LessThan(
                     Box::new(HeartTree::Nil),
                     Box::new(HeartTree::Equals(
@@ -483,7 +483,7 @@ mod tests {
             let mut parser = Parser::from_str("하아앗...! ♥ ? 💖");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 3), 3,
+                Some(Instruction::new(Operation::from_single_char('핫', 3), 3,
                 HeartTree::LessThan(
                     Box::new(HeartTree::Equals(
                             Box::new(HeartTree::Nil),
@@ -497,7 +497,7 @@ mod tests {
             let mut parser = Parser::from_str("흐읏...!♡!");
             assert_eq!(
                 parser.next(),
-                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 2), 3,
+                Some(Instruction::new(Operation::from_single_char('흣', 2), 3,
                 HeartTree::Equals(
                     Box::new(HeartTree::Nil),
                     Box::new(HeartTree::Equals(
