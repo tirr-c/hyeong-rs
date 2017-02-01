@@ -1,0 +1,20 @@
+name: rshyeong
+version: "0.1.0"
+author: VBChunguk <chwo9843@gmail.com>
+about: Hyeong-lang interpreter
+args:
+  - SOURCE:
+      help: Sets the input source code
+      required: true
+  - input:
+      short: i
+      long: input
+      value_name: INPUT
+      help: Sets the input file, stdin by default
+      takes_value: true
+  - output:
+      short: o
+      long: output
+      value_name: OUTPUT
+      help: Sets the output file, stdout by default
+      takes_value: true

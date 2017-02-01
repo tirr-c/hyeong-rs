@@ -12,16 +12,6 @@ pub struct Processor<'a, P> {
 }
 
 impl<'a, P> Processor<'a, P> {
-    pub fn new(inner: P) -> Self {
-        Processor {
-            inner: inner,
-            instructions: vec![],
-            position: 0,
-            stacks: StackManager::new(),
-            last_jump: None,
-            labels: HashMap::new(),
-        }
-    }
     pub fn with_stack_manager(inner: P, stacks: StackManager<'a>) -> Self {
         Processor {
             inner: inner,

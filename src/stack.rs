@@ -120,7 +120,7 @@ impl<W: Write> HyeongStack for HyeongWriteStack<W> {
                     write!(&mut self.inner, "{}", -int)
                 }
             },
-        };
+        }.unwrap();
     }
 
     fn pop_one(&mut self) -> HyeongRational { HyeongRational::NaN }
@@ -213,13 +213,6 @@ impl<'a> StackManager<'a> {
         };
         stack.select(3);
         stack
-    }
-
-    pub fn new() -> Self {
-        let stdin = HyeongReadStack::from_stdin();
-        let stdout = HyeongWriteStack::from_stdout();
-        let stderr = HyeongWriteStack::from_stderr();
-        StackManager::from_stacks(stdin.into(), stdout.into(), stderr.into())
     }
 
     fn check_exit(&mut self) -> bool {
