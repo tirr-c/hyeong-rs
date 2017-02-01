@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use super::structure::{Instruction, OperationType};
 use super::stack::{StackManager, HeartResult};
 
-struct Processor<'a, P> {
+pub struct Processor<'a, P> {
     inner: P,
     instructions: Vec<Instruction>,
     position: usize,
@@ -25,6 +25,15 @@ impl<'a, P> Processor<'a, P> {
 }
 
 impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
+    pub fn run(&mut self) -> isize {
+        loop {
+            match self.advance() {
+                Some(x) => { return x; },
+                None => { },
+            }
+        }
+    }
+
     pub fn advance(&mut self) -> Option<isize> {
         if self.instructions.len() <= self.position {
             match self.inner.next() {
@@ -73,8 +82,9 @@ impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
                     self.position = next;
                 }
             },
-            _ => { }
+            _ => { self.position += 1; }
         }
-        None
+
+        self.stacks.exit_code()
     }
 }

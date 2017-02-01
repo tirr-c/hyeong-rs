@@ -176,6 +176,7 @@ use std::collections::BTreeMap;
 pub struct StackManager<'a> {
     stacks: BTreeMap<usize, StackWrapper<'a>>,
     selected: usize,
+    exit_code: Option<isize>
 }
 
 impl<'a> StackManager<'a> {
@@ -191,6 +192,7 @@ impl<'a> StackManager<'a> {
         let mut stack = StackManager {
             stacks: stacks,
             selected: 0,
+            exit_code: None,
         };
         stack.select(3);
         stack
@@ -206,12 +208,29 @@ impl<'a> StackManager<'a> {
             StackWrapper::from_owned(Box::new(stderr)))
     }
 
+    fn check_exit(&mut self) -> bool {
+        if self.selected == 1 {
+            self.exit_code = Some(0);
+            true
+        } else if self.selected == 2 {
+            self.exit_code = Some(1);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn exit_code(&self) -> Option<isize> {
+        self.exit_code
+    }
+
     pub fn push(&mut self, hangul: usize, dots: usize) {
         let value = Rational::from_integer(((hangul * dots) as isize).into());
         self.stacks.get_mut(&self.selected).unwrap().push_one(value.into());
     }
 
     pub fn add(&mut self, count: usize, to: usize) {
+        if self.check_exit() { return; }
         let sum = {
             let mut sum = HyeongRational::from_u32(0);
             let stack_from = self.stacks.get_mut(&self.selected).unwrap();
@@ -226,6 +245,7 @@ impl<'a> StackManager<'a> {
     }
 
     pub fn mul(&mut self, count: usize, to: usize) {
+        if self.check_exit() { return; }
         let sum = {
             let mut sum = HyeongRational::from_u32(1);
             let stack_from = self.stacks.get_mut(&self.selected).unwrap();
@@ -240,6 +260,7 @@ impl<'a> StackManager<'a> {
     }
 
     pub fn neg(&mut self, count: usize, to: usize) {
+        if self.check_exit() { return; }
         let sum = {
             let mut temp = vec![];
             let stack_from = self.stacks.get_mut(&self.selected).unwrap();
@@ -259,6 +280,7 @@ impl<'a> StackManager<'a> {
     }
 
     pub fn recip(&mut self, count: usize, to: usize) {
+        if self.check_exit() { return; }
         let sum = {
             let mut temp = vec![];
             let stack_from = self.stacks.get_mut(&self.selected).unwrap();
@@ -278,6 +300,7 @@ impl<'a> StackManager<'a> {
     }
 
     pub fn duplicate(&mut self, count: usize, into: usize) {
+        if self.check_exit() { return; }
         let value = {
             let stack_from = self.stacks.get_mut(&self.selected).unwrap();
             let value = stack_from.pop_one();
