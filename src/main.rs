@@ -67,7 +67,7 @@ fn main() {
 
     let stacks = StackManager::from_stacks(stdin, stdout, stderr);
     let parser = Parser::from_str(&source_string);
-    let mut processor = Processor::with_stack_manager(parser, stacks);
+    let processor = Processor::with_stack_manager(parser, stacks);
 
     let exit_code = processor.run();
     std::process::exit(exit_code as i32);

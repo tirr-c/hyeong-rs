@@ -31,7 +31,7 @@ impl<'a, P> Drop for Processor<'a, P> {
 }
 
 impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
-    pub fn run(&mut self) -> isize {
+    pub fn run(mut self) -> isize {
         loop {
             match self.advance() {
                 Some(x) => {
