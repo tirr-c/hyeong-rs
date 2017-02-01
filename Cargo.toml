@@ -6,8 +6,10 @@ authors = ["VBChunguk <chwo9843@gmail.com>"]
 [features]
 big-rational = []
 
-[dependencies]
-num = "0.1.36"
+[dependencies.num]
+version = "0.1.36"
+default-features = false
+features = ["bigint", "rational"]
 
 [dependencies.clap]
 version = "~2.20.1"
