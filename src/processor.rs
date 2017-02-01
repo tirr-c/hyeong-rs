@@ -22,6 +22,16 @@ impl<'a, P> Processor<'a, P> {
             labels: HashMap::new(),
         }
     }
+    pub fn with_stack_manager(inner: P, stacks: StackManager<'a>) -> Self {
+        Processor {
+            inner: inner,
+            instructions: vec![],
+            position: 0,
+            stacks: stacks,
+            last_jump: None,
+            labels: HashMap::new(),
+        }
+    }
 }
 
 impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
@@ -85,5 +95,36 @@ impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
         }
 
         self.stacks.exit_code()
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::super::parser::Parser;
+    use super::super::stack::{HyeongReadStack, HyeongWriteStack, StackManager};
+    use super::Processor;
+
+    #[test]
+    fn hello_world() {
+        let source = include_str!("../snippets/hello-world.hyeong");
+        let input = "";
+        let expected = include_bytes!("../snippets/hello-world.stdout");
+        let mut output = vec![];
+        let mut error = vec![];
+
+        let exit_code = {
+            let stdin  = HyeongReadStack::new(input.as_bytes());
+            let mut stdout = HyeongWriteStack::new(&mut output);
+            let mut stderr = HyeongWriteStack::new(&mut error);
+            let parser = Parser::from_str(source);
+            let stacks = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
+            let mut processor = Processor::with_stack_manager(parser, stacks);
+
+            processor.run()
+        };
+        assert_eq!(exit_code, 0);
+        assert_eq!(&output[..], expected);
+        assert_eq!(error.len(), 0);
     }
 }

@@ -148,6 +148,30 @@ impl<'a> StackWrapper<'a> {
     }
 }
 
+impl<'a, R: 'static + Read> From<HyeongReadStack<R>> for StackWrapper<'a> {
+    fn from(item: HyeongReadStack<R>) -> StackWrapper<'a> {
+        StackWrapper::from_owned(Box::new(item))
+    }
+}
+
+impl<'a, R: Read> From<&'a mut HyeongReadStack<R>> for StackWrapper<'a> {
+    fn from(item: &'a mut HyeongReadStack<R>) -> StackWrapper<'a> {
+        StackWrapper::from_ref_mut(item)
+    }
+}
+
+impl<'a, W: 'static + Write> From<HyeongWriteStack<W>> for StackWrapper<'a> {
+    fn from(item: HyeongWriteStack<W>) -> StackWrapper<'a> {
+        StackWrapper::from_owned(Box::new(item))
+    }
+}
+
+impl<'a, W: Write> From<&'a mut HyeongWriteStack<W>> for StackWrapper<'a> {
+    fn from(item: &'a mut HyeongWriteStack<W>) -> StackWrapper<'a> {
+        StackWrapper::from_ref_mut(item)
+    }
+}
+
 impl<'a> HyeongStack for StackWrapper<'a> {
     fn push_one(&mut self, value: HyeongRational) {
         match self {
@@ -202,10 +226,7 @@ impl<'a> StackManager<'a> {
         let stdin = HyeongReadStack::from_stdin();
         let stdout = HyeongWriteStack::from_stdout();
         let stderr = HyeongWriteStack::from_stderr();
-        StackManager::from_stacks(
-            StackWrapper::from_owned(Box::new(stdin)),
-            StackWrapper::from_owned(Box::new(stdout)),
-            StackWrapper::from_owned(Box::new(stderr)))
+        StackManager::from_stacks(stdin.into(), stdout.into(), stderr.into())
     }
 
     fn check_exit(&mut self) -> bool {
@@ -370,11 +391,10 @@ impl<'a> StackManager<'a> {
 #[cfg(test)]
 mod tests {
     use super::super::rational::{Rational, HyeongRational};
+    use super::{HyeongStack, HyeongReadStack, HyeongWriteStack, StackManager};
 
     #[test]
     fn read_stack_pop() {
-        use super::{HyeongStack, HyeongReadStack};
-
         let test_str = "하앗...💕";
         let mut stack = HyeongReadStack::new(test_str.as_bytes());
         assert_eq!(stack.pop_one(), HyeongRational::from_u32('하' as u32));
@@ -390,8 +410,6 @@ mod tests {
 
     #[test]
     fn write_stack_push() {
-        use super::{HyeongStack, HyeongWriteStack};
-
         let buf = {
             let buf = vec![];
             let mut stack = HyeongWriteStack::new(buf);
@@ -410,8 +428,6 @@ mod tests {
 
     #[test]
     fn stack_manager_push_duplicate() {
-        use super::{HyeongReadStack, HyeongWriteStack, StackWrapper, StackManager};
-
         let test_str = "";
         let mut buf = vec![];
         let mut buf_err = vec![];
@@ -419,10 +435,7 @@ mod tests {
             let stdin =  HyeongReadStack::new(test_str.as_bytes());
             let mut stdout = HyeongWriteStack::new(&mut buf);
             let mut stderr = HyeongWriteStack::new(&mut buf_err);
-            let stdin = StackWrapper::from_owned(Box::new(stdin));
-            let stdout = StackWrapper::from_ref_mut(&mut stdout);
-            let stderr = StackWrapper::from_ref_mut(&mut stderr);
-            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
+            let mut manager = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
 
             manager.push(5, 13);     // 혀어어어엉.............
             manager.duplicate(3, 1); // 흐으윽.
@@ -432,8 +445,6 @@ mod tests {
 
     #[test]
     fn stack_manager_add_mul() {
-        use super::{HyeongReadStack, HyeongWriteStack, StackWrapper, StackManager};
-
         let test_str = "A";
         let mut buf = vec![];
         let mut buf_err = vec![];
@@ -441,10 +452,7 @@ mod tests {
             let stdin =  HyeongReadStack::new(test_str.as_bytes());
             let mut stdout = HyeongWriteStack::new(&mut buf);
             let mut stderr = HyeongWriteStack::new(&mut buf_err);
-            let stdin = StackWrapper::from_owned(Box::new(stdin));
-            let stdout = StackWrapper::from_ref_mut(&mut stdout);
-            let stderr = StackWrapper::from_ref_mut(&mut stderr);
-            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
+            let mut manager = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
 
             manager.duplicate(1, 0); // 흑
             manager.add(1, 2);       // 항..
@@ -463,8 +471,6 @@ mod tests {
 
     #[test]
     fn stack_manager_mul_recip() {
-        use super::{HyeongReadStack, HyeongWriteStack, StackWrapper, StackManager};
-
         let test_str = "밯망희";
         let mut buf = vec![];
         let mut buf_err = vec![];
@@ -472,10 +478,7 @@ mod tests {
             let stdin =  HyeongReadStack::new(test_str.as_bytes());
             let mut stdout = HyeongWriteStack::new(&mut buf);
             let mut stderr = HyeongWriteStack::new(&mut buf_err);
-            let stdin = StackWrapper::from_owned(Box::new(stdin));
-            let stdout = StackWrapper::from_ref_mut(&mut stdout);
-            let stderr = StackWrapper::from_ref_mut(&mut stderr);
-            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
+            let mut manager = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
 
             manager.push(4, 2);
             manager.push(2, 3);
