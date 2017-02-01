@@ -78,7 +78,6 @@ impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
             },
             HeartResult::Return => {
                 if let Some(next) = self.last_jump {
-                    self.last_jump = Some(self.position);
                     self.position = next;
                 } else { self.position += 1; }
             },
