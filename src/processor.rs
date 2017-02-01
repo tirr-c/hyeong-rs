@@ -24,11 +24,20 @@ impl<'a, P> Processor<'a, P> {
     }
 }
 
+impl<'a, P> Drop for Processor<'a, P> {
+    fn drop(&mut self) {
+        self.stacks.flush().unwrap();
+    }
+}
+
 impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
     pub fn run(&mut self) -> isize {
         loop {
             match self.advance() {
-                Some(x) => { return x; },
+                Some(x) => {
+                    self.stacks.flush().unwrap();
+                    return x;
+                },
                 None => { },
             }
         }

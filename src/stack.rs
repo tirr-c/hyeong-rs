@@ -9,6 +9,7 @@ use super::utf8::read_codepoint;
 pub trait HyeongStack {
     fn push_one(&mut self, value: HyeongRational);
     fn pop_one(&mut self) -> HyeongRational;
+    fn flush(&mut self) -> io::Result<()>;
 }
 
 impl HyeongStack for Vec<HyeongRational> {
@@ -19,6 +20,8 @@ impl HyeongStack for Vec<HyeongRational> {
     fn pop_one(&mut self) -> HyeongRational {
         self.pop().into()
     }
+
+    fn flush(&mut self) -> io::Result<()> { Ok(()) }
 }
 
 
@@ -59,6 +62,8 @@ impl<R: Read> HyeongStack for HyeongReadStack<R> {
         }
         self.stack.pop_one()
     }
+
+    fn flush(&mut self) -> io::Result<()> { Ok(()) }
 }
 
 
@@ -124,6 +129,8 @@ impl<W: Write> HyeongStack for HyeongWriteStack<W> {
     }
 
     fn pop_one(&mut self) -> HyeongRational { HyeongRational::NaN }
+
+    fn flush(&mut self) -> io::Result<()> { self.inner.flush() }
 }
 
 
@@ -177,6 +184,13 @@ impl<'a> HyeongStack for StackWrapper<'a> {
         match self {
             &mut StackWrapper::Owned(ref mut stack) => stack.pop_one(),
             &mut StackWrapper::Borrowed(ref mut stack) => stack.pop_one(),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            &mut StackWrapper::Owned(ref mut stack) => stack.flush(),
+            &mut StackWrapper::Borrowed(ref mut stack) => stack.flush(),
         }
     }
 }
@@ -370,6 +384,11 @@ impl<'a> StackManager<'a> {
         if self.stacks.contains_key(&id) { return; }
         let new_stack: Box<HyeongStack> = Box::new(vec![]);
         self.stacks.insert(id, StackWrapper::from_owned(new_stack));
+    }
+
+    pub fn flush(&mut self) -> io::Result<()> {
+        self.stacks.get_mut(&1).unwrap().flush()?;
+        self.stacks.get_mut(&2).unwrap().flush()
     }
 }
 
