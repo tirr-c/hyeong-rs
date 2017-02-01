@@ -52,7 +52,7 @@ fn main() {
     let stdout = if output_file == "-" {
         HyeongWriteStack::from_stdout().into()
     } else {
-        let file = match File::create(input_file) {
+        let file = match File::create(output_file) {
             Ok(f) => f,
             Err(e) => {
                 println!("Cannot open output file {}: {}", output_file, e);
