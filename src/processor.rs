@@ -74,13 +74,13 @@ impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
                 if next != self.position {
                     self.last_jump = Some(self.position);
                     self.position = next;
-                }
+                } else { self.position += 1; }
             },
             HeartResult::Return => {
                 if let Some(next) = self.last_jump {
                     self.last_jump = Some(self.position);
                     self.position = next;
-                }
+                } else { self.position += 1; }
             },
             _ => { self.position += 1; }
         }
