@@ -479,6 +479,34 @@ mod tests {
                     )))
                 );
             assert_eq!(parser.next(), None);
+
+            let mut parser = Parser::from_str("하아앗...! ♥ ? 💖");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('하', Some('앗'), 3), 3,
+                HeartTree::LessThan(
+                    Box::new(HeartTree::Equals(
+                            Box::new(HeartTree::Nil),
+                            Box::new(HeartTree::Heart(black_heart_suit_idx)),
+                            )),
+                    Box::new(HeartTree::Heart(sparkling_heart_idx))
+                    )))
+                );
+            assert_eq!(parser.next(), None);
+
+            let mut parser = Parser::from_str("흐읏...!♡!");
+            assert_eq!(
+                parser.next(),
+                Some(Instruction::new(Operation::from_chars('흐', Some('읏'), 2), 3,
+                HeartTree::Equals(
+                    Box::new(HeartTree::Nil),
+                    Box::new(HeartTree::Equals(
+                            Box::new(HeartTree::Return),
+                            Box::new(HeartTree::Nil)
+                            ))
+                    )))
+                );
+            assert_eq!(parser.next(), None);
         }
     }
 }
