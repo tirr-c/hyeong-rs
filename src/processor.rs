@@ -1,3 +1,4 @@
+use std::io;
 use std::collections::HashMap;
 use super::structure::{Instruction, OperationType};
 use super::stack::{StackManager, HeartResult};
@@ -31,12 +32,11 @@ impl<'a, P> Drop for Processor<'a, P> {
 }
 
 impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
-    pub fn run(mut self) -> isize {
+    pub fn run(mut self) -> (isize, io::Result<()>) {
         loop {
             match self.advance() {
                 Some(x) => {
-                    self.stacks.flush().unwrap();
-                    return x;
+                    return (x, self.stacks.flush());
                 },
                 None => { },
             }

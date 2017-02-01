@@ -10,7 +10,7 @@ mod stack;
 mod processor;
 
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use self::parser::Parser;
 use self::stack::{HyeongReadStack, HyeongWriteStack, StackManager};
 use self::processor::Processor;
@@ -69,6 +69,12 @@ fn main() {
     let parser = Parser::from_str(&source_string);
     let processor = Processor::with_stack_manager(parser, stacks);
 
-    let exit_code = processor.run();
+    let (exit_code, err) = processor.run();
+    if let Err(e) = err {
+        if writeln!(std::io::stderr(), "Error during flushing: {}\nExit code was: {}", e, exit_code).is_err() {
+            std::process::exit(3);
+        }
+        std::process::exit(3);
+    }
     std::process::exit(exit_code as i32);
 }
