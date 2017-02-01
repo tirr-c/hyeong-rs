@@ -1,7 +1,6 @@
 use std;
 use std::io::{self, Read, Write};
 use num::traits::cast::{ToPrimitive, FromPrimitive};
-use num::rational::Ratio;
 use super::structure::HeartTree;
 use super::rational::{Rational, HyeongRational};
 use super::utf8::read_codepoint;
@@ -34,9 +33,6 @@ impl<R> HyeongReadStack<R> {
             inner: inner,
             stack: vec![],
         }
-    }
-    pub fn into_inner(self) -> R {
-        self.inner
     }
 }
 
@@ -75,9 +71,6 @@ impl<W> HyeongWriteStack<W> {
         HyeongWriteStack {
             inner: inner,
         }
-    }
-    pub fn into_inner(self) -> W {
-        self.inner
     }
 }
 
@@ -410,9 +403,9 @@ mod tests {
 
     #[test]
     fn write_stack_push() {
-        let buf = {
-            let buf = vec![];
-            let mut stack = HyeongWriteStack::new(buf);
+        let mut buf = vec![];
+        {
+            let mut stack = HyeongWriteStack::new(&mut buf);
             stack.push_one(HyeongRational::from_u32('흑' as u32));
             stack.push_one(HyeongRational::from_u32('.' as u32));
             stack.push_one(HyeongRational::from_u32('.' as u32));
@@ -421,7 +414,6 @@ mod tests {
             stack.push_one(HyeongRational::NaN);
             stack.push_one(Rational::new((65*3+2 as isize).into(), (3 as isize).into()).into());
             stack.push_one(Rational::new((-11 as isize).into(), (7 as isize).into()).into());
-            stack.into_inner()
         };
         assert_eq!(&buf[..], "흑..!32너무 커엇...A2".as_bytes());
     }
