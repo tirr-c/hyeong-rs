@@ -112,17 +112,44 @@ mod tests {
         let mut output = vec![];
         let mut error = vec![];
 
-        let exit_code = {
+        let (exit_code, err) = {
             let stdin  = HyeongReadStack::new(input.as_bytes());
             let mut stdout = HyeongWriteStack::new(&mut output);
             let mut stderr = HyeongWriteStack::new(&mut error);
             let parser = Parser::from_str(source);
             let stacks = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
-            let mut processor = Processor::with_stack_manager(parser, stacks);
+            let processor = Processor::with_stack_manager(parser, stacks);
 
             processor.run()
         };
-        assert_eq!(exit_code, 0);
+        err.unwrap();
+
+        assert_eq!(exit_code, include!("../snippets/hello-world.exitcode"));
+        assert_eq!(&output[..], expected);
+        assert_eq!(error.len(), 0);
+    }
+
+    #[test]
+    fn fibonacci() {
+        let source = include_str!("../snippets/fibonacci.hyeong");
+        let input = "";
+        let expected = include_bytes!("../snippets/fibonacci.stdout");
+        let mut output = vec![];
+        let mut error = vec![];
+
+        let (exit_code, err) = {
+            let stdin  = HyeongReadStack::new(input.as_bytes());
+            let mut stdout = HyeongWriteStack::new(&mut output);
+            let mut stderr = HyeongWriteStack::new(&mut error);
+            let parser = Parser::from_str(source);
+            let stacks = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
+            let processor = Processor::with_stack_manager(parser, stacks);
+
+            processor.run()
+        };
+        err.unwrap();
+
+        assert_eq!(exit_code, include!("../snippets/fibonacci.exitcode"));
         assert_eq!(&output[..], expected);
         assert_eq!(error.len(), 0);
     }
