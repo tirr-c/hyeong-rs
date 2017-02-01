@@ -1,6 +1,6 @@
 name: rshyeong
 version: "0.1.0"
-author: VBChunguk <chwo9843@gmail.com>
+author: Wonwoo Choi <chwo9843@gmail.com>
 about: Hyeong-lang interpreter
 args:
   - SOURCE:
