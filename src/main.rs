@@ -10,7 +10,7 @@ mod stack;
 mod processor;
 
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{Read, Write, BufWriter};
 use self::parser::Parser;
 use self::stack::{HyeongReadStack, HyeongWriteStack, StackManager};
 use self::processor::Processor;
@@ -59,7 +59,7 @@ fn main() {
                 std::process::exit(2);
             }
         };
-        HyeongWriteStack::new(file).into()
+        HyeongWriteStack::new(BufWriter::new(file)).into()
     };
 
     let stderr = HyeongWriteStack::from_stderr().into();
