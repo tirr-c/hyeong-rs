@@ -104,53 +104,69 @@ mod tests {
     use super::super::stack::{HyeongReadStack, HyeongWriteStack, StackManager};
     use super::Processor;
 
+    macro_rules! make_input {
+        ($name:expr, ) => (b"");
+        ($name:expr, input $($r:ident)*) => (
+            include_bytes!(concat!("../snippets/", $name, ".stdin"))
+            );
+        ($name:expr, $i:ident $($next:ident)*) => (make_input!($name, $($next)*));
+    }
+    macro_rules! make_output {
+        ($name:expr, ) => ((false, b""));
+        ($name:expr, output $($r:ident)*) => (
+            (true, include_bytes!(concat!("../snippets/", $name, ".stdout")))
+            );
+        ($name:expr, $i:ident $($next:ident)*) => (make_output!($name, $($next)*));
+    }
+    macro_rules! make_error {
+        ($name:expr, ) => ((false, b""));
+        ($name:expr, error $($r:ident)*) => (
+            (true, include_bytes!(concat!("../snippets/", $name, ".stderr")))
+            );
+        ($name:expr, $i:ident $($next:ident)*) => (make_error!($name, $($next)*));
+    }
+    macro_rules! make_exitcode {
+        ($name:expr, ) => ((false, 0));
+        ($name:expr, exitcode $($r:ident)*) => (
+            (true, include!(concat!("../snippets/", $name, ".exitcode")))
+            );
+        ($name:expr, $i:ident $($next:ident)*) => (make_exitcode!($name, $($next)*));
+    }
+
+    macro_rules! test {
+        ($name:expr $(, $t:ident)*) => {
+            let source = include_str!(concat!("../snippets/", $name, ".hyeong"));
+            let input = make_input!($name, $($t)*);
+            let (test_output, expected_output) = make_output!($name, $($t)*);
+            let (test_error, expected_error) = make_error!($name, $($t)*);
+            let (test_exitcode, expected_exitcode) = make_exitcode!($name, $($t)*);
+            let mut output = vec![];
+            let mut error = vec![];
+
+            let (exit_code, err) = {
+                let stdin  = HyeongReadStack::new(&input[..]);
+                let mut stdout = HyeongWriteStack::new(&mut output);
+                let mut stderr = HyeongWriteStack::new(&mut error);
+                let parser = Parser::from_str(source);
+                let stacks = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
+                let processor = Processor::with_stack_manager(parser, stacks);
+                processor.run()
+            };
+            err.unwrap();
+
+            if test_exitcode { assert_eq!(exit_code, expected_exitcode); }
+            if test_output { assert_eq!(&output[..], expected_output); }
+            if test_error { assert_eq!(&error[..], expected_error); }
+        };
+    }
+
     #[test]
     fn hello_world() {
-        let source = include_str!("../snippets/hello-world.hyeong");
-        let input = "";
-        let expected = include_bytes!("../snippets/hello-world.stdout");
-        let mut output = vec![];
-        let mut error = vec![];
-
-        let (exit_code, err) = {
-            let stdin  = HyeongReadStack::new(input.as_bytes());
-            let mut stdout = HyeongWriteStack::new(&mut output);
-            let mut stderr = HyeongWriteStack::new(&mut error);
-            let parser = Parser::from_str(source);
-            let stacks = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
-            let processor = Processor::with_stack_manager(parser, stacks);
-
-            processor.run()
-        };
-        err.unwrap();
-
-        assert_eq!(exit_code, include!("../snippets/hello-world.exitcode"));
-        assert_eq!(&output[..], expected);
-        assert_eq!(error.len(), 0);
+        test!("hello-world", output, exitcode);
     }
 
     #[test]
     fn fibonacci() {
-        let source = include_str!("../snippets/fibonacci.hyeong");
-        let input = "";
-        let expected = include_bytes!("../snippets/fibonacci.stdout");
-        let mut output = vec![];
-        let mut error = vec![];
-
-        let (exit_code, err) = {
-            let stdin  = HyeongReadStack::new(input.as_bytes());
-            let mut stdout = HyeongWriteStack::new(&mut output);
-            let mut stderr = HyeongWriteStack::new(&mut error);
-            let parser = Parser::from_str(source);
-            let stacks = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
-            let processor = Processor::with_stack_manager(parser, stacks);
-
-            processor.run()
-        };
-        err.unwrap();
-
-        assert_eq!(exit_code, include!("../snippets/fibonacci.exitcode"));
-        assert_eq!(&output[..], expected);
-        assert_eq!(error.len(), 0);
+        test!("fibonacci", output, exitcode);
     }
 }

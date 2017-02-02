@@ -104,9 +104,9 @@ impl Display for HyeongRational {
         match self {
             &HyeongRational::Rational(ref r) => {
                 let int = r.floor().to_integer();
-                let zero = (0 as isize).into();
+                let zero = 0isize.into();
                 if int >= zero {
-                    let unicode_bound = (0x110000 as isize).into();
+                    let unicode_bound = 0x110000isize.into();
                     if int >= unicode_bound {
                         write!(f, "너무 커엇...")
                     } else {
@@ -216,11 +216,11 @@ mod tests {
     }
     #[test]
     fn operators() {
-        let mut half: HyeongRational = Rational::new((1 as isize).into(), (2 as isize).into()).into();
-        let one_third: HyeongRational = Rational::new((1 as isize).into(), (3 as isize).into()).into();
-        let five_sixth: HyeongRational = Rational::new((5 as isize).into(), (6 as isize).into()).into();
-        let one_sixth: HyeongRational = Rational::new((1 as isize).into(), (6 as isize).into()).into();
-        let minus_one_sixth: HyeongRational = Rational::new((-1 as isize).into(), (6 as isize).into()).into();
+        let mut half: HyeongRational = Rational::new(1isize.into(), 2isize.into()).into();
+        let one_third: HyeongRational = Rational::new(1isize.into(), 3isize.into()).into();
+        let five_sixth: HyeongRational = Rational::new(5isize.into(), 6isize.into()).into();
+        let one_sixth: HyeongRational = Rational::new(1isize.into(), 6isize.into()).into();
+        let minus_one_sixth: HyeongRational = Rational::new((-1isize).into(), 6isize.into()).into();
         let nan = HyeongRational::NaN;
 
         assert_eq!(half.clone() + one_third.clone(), five_sixth.clone());
@@ -233,7 +233,7 @@ mod tests {
         half += one_third;
         half *= one_sixth;
         half += minus_one_sixth;
-        let mut answer: HyeongRational = Rational::new((-1 as isize).into(), (36 as isize).into()).into();
+        let mut answer: HyeongRational = Rational::new((-1isize).into(), 36isize.into()).into();
         assert_eq!(half, answer);
         half += nan.clone();
         assert!(half.is_nan());
@@ -242,7 +242,7 @@ mod tests {
     }
     #[test]
     fn recip() {
-        let half: HyeongRational = Rational::new((1 as isize).into(), (2 as isize).into()).into();
+        let half: HyeongRational = Rational::new(1isize.into(), 2isize.into()).into();
         let two = HyeongRational::from_u32(2);
         let zero = HyeongRational::from_u32(0);
         let nan = HyeongRational::NaN;

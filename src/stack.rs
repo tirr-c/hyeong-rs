@@ -394,8 +394,8 @@ mod tests {
             stack.push_one(HyeongRational::from_u32('!' as u32));
             stack.push_one(Rational::from_integer((-32 as isize).into()).into());
             stack.push_one(HyeongRational::NaN);
-            stack.push_one(Rational::new((65*3+2 as isize).into(), (3 as isize).into()).into());
-            stack.push_one(Rational::new((-11 as isize).into(), (7 as isize).into()).into());
+            stack.push_one(Rational::new((65*3+2isize).into(), 3isize.into()).into());
+            stack.push_one(Rational::new((-11isize).into(), 7isize.into()).into());
         };
         assert_eq!(&buf[..], "흑..!32너무 커엇...A2".as_bytes());
     }
