@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt::{self, Display, Formatter};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg};
 use num::Zero;
 
@@ -93,6 +94,35 @@ impl From<Option<HyeongRational>> for HyeongRational {
         match item {
             None => HyeongRational::NaN,
             Some(r) => r,
+        }
+    }
+}
+
+impl Display for HyeongRational {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        use num::traits::cast::ToPrimitive;
+        match self {
+            &HyeongRational::Rational(ref r) => {
+                let int = r.floor().to_integer();
+                let zero = (0 as isize).into();
+                if int >= zero {
+                    let unicode_bound = (0x110000 as isize).into();
+                    if int >= unicode_bound {
+                        write!(f, "너무 커엇...")
+                    } else {
+                        let int = int
+                            .to_u32()
+                            .and_then(|c| ::std::char::from_u32(c))
+                            .unwrap();
+                        write!(f, "{}", int)
+                    }
+                } else {
+                    write!(f, "{}", -int)
+                }
+            },
+            &HyeongRational::NaN => {
+                write!(f, "너무 커엇...")
+            },
         }
     }
 }

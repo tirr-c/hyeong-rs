@@ -1,6 +1,4 @@
-use std;
 use std::io::{self, Read, Write};
-use num::traits::cast::{ToPrimitive, FromPrimitive};
 use super::structure::HeartTree;
 use super::rational::{Rational, HyeongRational};
 use super::utf8::read_codepoint;
@@ -39,10 +37,10 @@ impl<R> HyeongReadStack<R> {
     }
 }
 
-impl HyeongReadStack<std::io::Stdin> {
+impl HyeongReadStack<io::Stdin> {
     pub fn from_stdin() -> Self {
         HyeongReadStack {
-            inner: std::io::stdin(),
+            inner: io::stdin(),
             stack: vec![],
         }
     }
@@ -79,53 +77,25 @@ impl<W> HyeongWriteStack<W> {
     }
 }
 
-impl HyeongWriteStack<std::io::Stdout> {
+impl HyeongWriteStack<io::Stdout> {
     pub fn from_stdout() -> Self {
         HyeongWriteStack {
-            inner: std::io::stdout(),
+            inner: io::stdout(),
         }
     }
 }
 
-impl HyeongWriteStack<std::io::Stderr> {
+impl HyeongWriteStack<io::Stderr> {
     pub fn from_stderr() -> Self {
         HyeongWriteStack {
-            inner: std::io::stderr(),
-        }
-    }
-}
-
-impl<W: Write> HyeongWriteStack<W> {
-    fn output_nan(&mut self) -> io::Result<()> {
-        write!(&mut self.inner, "너무 커엇...")
-    }
-    fn output_unicode<I: PartialOrd + ToPrimitive + FromPrimitive>(&mut self, value: I) -> io::Result<()> {
-        let zero = I::from_isize(0).unwrap();
-        assert!(value >= zero);
-        let unicode_bound = I::from_isize(0x110000).unwrap();
-        if value >= unicode_bound {
-            self.output_nan()
-        } else {
-            let value = value.to_u32().and_then(|c| std::char::from_u32(c)).unwrap();
-            write!(&mut self.inner, "{}", value)
+            inner: io::stderr(),
         }
     }
 }
 
 impl<W: Write> HyeongStack for HyeongWriteStack<W> {
     fn push_one(&mut self, value: HyeongRational) {
-        match value {
-            HyeongRational::NaN => self.output_nan(),
-            HyeongRational::Rational(r) => {
-                let int = r.floor().to_integer();
-                let zero = (0 as isize).into();
-                if int >= zero {
-                    self.output_unicode(int)
-                } else {
-                    write!(&mut self.inner, "{}", -int)
-                }
-            },
-        }.unwrap();
+        write!(&mut self.inner, "{}", value).unwrap();
     }
 
     fn pop_one(&mut self) -> HyeongRational { HyeongRational::NaN }
