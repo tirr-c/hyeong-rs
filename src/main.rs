@@ -35,8 +35,8 @@ fn main() {
     }
 
     let input_file = matches.value_of("input").unwrap_or("-");
-    let stdin = if input_file == "-" {
-        HyeongReadStack::from_stdin().into()
+    let stdin: HyeongReadStack<Box<Read>> = if input_file == "-" {
+        HyeongReadStack::new(Box::new(std::io::stdin()))
     } else {
         let file = match File::open(input_file) {
             Ok(f) => f,
@@ -45,12 +45,12 @@ fn main() {
                 std::process::exit(2);
             }
         };
-        HyeongReadStack::new(file).into()
+        HyeongReadStack::new(Box::new(file))
     };
 
     let output_file = matches.value_of("output").unwrap_or("-");
-    let stdout = if output_file == "-" {
-        HyeongWriteStack::from_stdout().into()
+    let stdout: HyeongWriteStack<Box<Write>> = if output_file == "-" {
+        HyeongWriteStack::new(Box::new(std::io::stdout()))
     } else {
         let file = match File::create(output_file) {
             Ok(f) => f,
@@ -59,10 +59,10 @@ fn main() {
                 std::process::exit(2);
             }
         };
-        HyeongWriteStack::new(BufWriter::new(file)).into()
+        HyeongWriteStack::new(Box::new(BufWriter::new(file)))
     };
 
-    let stderr = HyeongWriteStack::from_stderr().into();
+    let stderr = HyeongWriteStack::new(std::io::stderr());
 
 
     let stacks = StackManager::from_stacks(stdin, stdout, stderr);

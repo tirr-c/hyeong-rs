@@ -7,7 +7,6 @@ use super::utf8::read_codepoint;
 pub trait HyeongStack {
     fn push_one(&mut self, value: HyeongRational);
     fn pop_one(&mut self) -> HyeongRational;
-    fn flush(&mut self) -> io::Result<()>;
 }
 
 impl HyeongStack for Vec<HyeongRational> {
@@ -18,8 +17,6 @@ impl HyeongStack for Vec<HyeongRational> {
     fn pop_one(&mut self) -> HyeongRational {
         self.pop().into()
     }
-
-    fn flush(&mut self) -> io::Result<()> { Ok(()) }
 }
 
 
@@ -32,15 +29,6 @@ impl<R> HyeongReadStack<R> {
     pub fn new(inner: R) -> Self {
         HyeongReadStack {
             inner: inner,
-            stack: vec![],
-        }
-    }
-}
-
-impl HyeongReadStack<io::Stdin> {
-    pub fn from_stdin() -> Self {
-        HyeongReadStack {
-            inner: io::stdin(),
             stack: vec![],
         }
     }
@@ -60,8 +48,6 @@ impl<R: Read> HyeongStack for HyeongReadStack<R> {
         }
         self.stack.pop_one()
     }
-
-    fn flush(&mut self) -> io::Result<()> { Ok(()) }
 }
 
 
@@ -77,19 +63,9 @@ impl<W> HyeongWriteStack<W> {
     }
 }
 
-impl HyeongWriteStack<io::Stdout> {
-    pub fn from_stdout() -> Self {
-        HyeongWriteStack {
-            inner: io::stdout(),
-        }
-    }
-}
-
-impl HyeongWriteStack<io::Stderr> {
-    pub fn from_stderr() -> Self {
-        HyeongWriteStack {
-            inner: io::stderr(),
-        }
+impl<W: Write> HyeongWriteStack<W> {
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
     }
 }
 
@@ -99,70 +75,6 @@ impl<W: Write> HyeongStack for HyeongWriteStack<W> {
     }
 
     fn pop_one(&mut self) -> HyeongRational { HyeongRational::NaN }
-
-    fn flush(&mut self) -> io::Result<()> { self.inner.flush() }
-}
-
-
-pub enum StackWrapper<'a> {
-    Owned(Box<HyeongStack>),
-    Borrowed(&'a mut HyeongStack),
-}
-
-impl<'a> StackWrapper<'a> {
-    pub fn from_owned(stack: Box<HyeongStack>) -> Self {
-        StackWrapper::Owned(stack)
-    }
-    pub fn from_ref_mut(stack: &'a mut HyeongStack) -> Self {
-        StackWrapper::Borrowed(stack)
-    }
-}
-
-impl<'a, R: 'static + Read> From<HyeongReadStack<R>> for StackWrapper<'a> {
-    fn from(item: HyeongReadStack<R>) -> StackWrapper<'a> {
-        StackWrapper::from_owned(Box::new(item))
-    }
-}
-
-impl<'a, R: Read> From<&'a mut HyeongReadStack<R>> for StackWrapper<'a> {
-    fn from(item: &'a mut HyeongReadStack<R>) -> StackWrapper<'a> {
-        StackWrapper::from_ref_mut(item)
-    }
-}
-
-impl<'a, W: 'static + Write> From<HyeongWriteStack<W>> for StackWrapper<'a> {
-    fn from(item: HyeongWriteStack<W>) -> StackWrapper<'a> {
-        StackWrapper::from_owned(Box::new(item))
-    }
-}
-
-impl<'a, W: Write> From<&'a mut HyeongWriteStack<W>> for StackWrapper<'a> {
-    fn from(item: &'a mut HyeongWriteStack<W>) -> StackWrapper<'a> {
-        StackWrapper::from_ref_mut(item)
-    }
-}
-
-impl<'a> HyeongStack for StackWrapper<'a> {
-    fn push_one(&mut self, value: HyeongRational) {
-        match self {
-            &mut StackWrapper::Owned(ref mut stack) => stack.push_one(value),
-            &mut StackWrapper::Borrowed(ref mut stack) => stack.push_one(value),
-        }
-    }
-
-    fn pop_one(&mut self) -> HyeongRational {
-        match self {
-            &mut StackWrapper::Owned(ref mut stack) => stack.pop_one(),
-            &mut StackWrapper::Borrowed(ref mut stack) => stack.pop_one(),
-        }
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        match self {
-            &mut StackWrapper::Owned(ref mut stack) => stack.flush(),
-            &mut StackWrapper::Borrowed(ref mut stack) => stack.flush(),
-        }
-    }
 }
 
 
@@ -174,24 +86,25 @@ pub enum HeartResult {
 }
 
 use std::collections::BTreeMap;
-pub struct StackManager<'a> {
-    stacks: BTreeMap<usize, StackWrapper<'a>>,
+pub struct StackManager<I: Read, O: Write, E: Write> {
+    stdin:  HyeongReadStack<I>,
+    stdout: HyeongWriteStack<O>,
+    stderr: HyeongWriteStack<E>,
+    stacks: BTreeMap<usize, Vec<HyeongRational>>,
     selected: usize,
     exit_code: Option<isize>
 }
 
-impl<'a> StackManager<'a> {
-    pub fn from_stacks(stdin:  StackWrapper<'a>,
-                       stdout: StackWrapper<'a>,
-                       stderr: StackWrapper<'a>
+impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
+    pub fn from_stacks(stdin:  HyeongReadStack<I>,
+                       stdout: HyeongWriteStack<O>,
+                       stderr: HyeongWriteStack<E>
                       ) -> Self {
-        let mut stacks = BTreeMap::new();
-        stacks.insert(0, stdin);
-        stacks.insert(1, stdout);
-        stacks.insert(2, stderr);
-
         let mut stack = StackManager {
-            stacks: stacks,
+            stdin: stdin,
+            stdout: stdout,
+            stderr: stderr,
+            stacks: BTreeMap::new(),
             selected: 0,
             exit_code: None,
         };
@@ -211,27 +124,41 @@ impl<'a> StackManager<'a> {
         }
     }
 
+    fn selected_stack_mut(&mut self) -> &mut HyeongStack {
+        let id = self.selected;
+        self.stack_mut(id)
+    }
+
+    fn stack_mut(&mut self, id: usize) -> &mut HyeongStack {
+        match id {
+            0 => &mut self.stdin,
+            1 => &mut self.stdout,
+            2 => &mut self.stderr,
+            i => self.stacks.get_mut(&i).unwrap(),
+        }
+    }
+
     pub fn exit_code(&self) -> Option<isize> {
         self.exit_code
     }
 
     pub fn push(&mut self, hangul: usize, dots: usize) {
         let value = Rational::from_integer(((hangul * dots) as isize).into());
-        self.stacks.get_mut(&self.selected).unwrap().push_one(value.into());
+        self.selected_stack_mut().push_one(value.into());
     }
 
     pub fn add(&mut self, count: usize, to: usize) {
         if self.check_exit() { return; }
         let sum = {
             let mut sum = HyeongRational::from_u32(0);
-            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            let stack_from = self.selected_stack_mut();
             for _ in 0..count {
                 sum += stack_from.pop_one();
             }
             sum
         };
         self.make_stack(to);
-        let stack_to = self.stacks.get_mut(&to).unwrap();
+        let stack_to = self.stack_mut(to);
         stack_to.push_one(sum);
     }
 
@@ -239,14 +166,14 @@ impl<'a> StackManager<'a> {
         if self.check_exit() { return; }
         let sum = {
             let mut sum = HyeongRational::from_u32(1);
-            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            let stack_from = self.selected_stack_mut();
             for _ in 0..count {
                 sum *= stack_from.pop_one();
             }
             sum
         };
         self.make_stack(to);
-        let stack_to = self.stacks.get_mut(&to).unwrap();
+        let stack_to = self.stack_mut(to);
         stack_to.push_one(sum);
     }
 
@@ -254,7 +181,7 @@ impl<'a> StackManager<'a> {
         if self.check_exit() { return; }
         let sum = {
             let mut temp = vec![];
-            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            let stack_from = self.selected_stack_mut();
             for _ in 0..count {
                 temp.push(-stack_from.pop_one());
             }
@@ -266,7 +193,7 @@ impl<'a> StackManager<'a> {
             sum
         };
         self.make_stack(to);
-        let stack_to = self.stacks.get_mut(&to).unwrap();
+        let stack_to = self.stack_mut(to);
         stack_to.push_one(sum);
     }
 
@@ -274,7 +201,7 @@ impl<'a> StackManager<'a> {
         if self.check_exit() { return; }
         let sum = {
             let mut temp = vec![];
-            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            let stack_from = self.selected_stack_mut();
             for _ in 0..count {
                 temp.push(stack_from.pop_one().recip());
             }
@@ -286,20 +213,20 @@ impl<'a> StackManager<'a> {
             sum
         };
         self.make_stack(to);
-        let stack_to = self.stacks.get_mut(&to).unwrap();
+        let stack_to = self.stack_mut(to);
         stack_to.push_one(sum);
     }
 
     pub fn duplicate(&mut self, count: usize, into: usize) {
         if self.check_exit() { return; }
         let value = {
-            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            let stack_from = self.selected_stack_mut();
             let value = stack_from.pop_one();
             stack_from.push_one(value.clone());
             value
         };
         self.select(into);
-        let stack_to = self.stacks.get_mut(&self.selected).unwrap();
+        let stack_to = self.selected_stack_mut();
         for _ in 0..count {
             stack_to.push_one(value.clone());
         }
@@ -330,7 +257,7 @@ impl<'a> StackManager<'a> {
     fn stack_less_than(&mut self, target: usize) -> bool {
         let target = HyeongRational::from_usize(target);
         let value = {
-            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            let stack_from = self.selected_stack_mut();
             stack_from.pop_one()
         };
         value < target
@@ -339,7 +266,7 @@ impl<'a> StackManager<'a> {
     fn stack_equals(&mut self, target: usize) -> bool {
         let target = HyeongRational::from_usize(target);
         let value = {
-            let stack_from = self.stacks.get_mut(&self.selected).unwrap();
+            let stack_from = self.selected_stack_mut();
             stack_from.pop_one()
         };
         value == target
@@ -351,14 +278,15 @@ impl<'a> StackManager<'a> {
     }
 
     fn make_stack(&mut self, id: usize) {
-        if self.stacks.contains_key(&id) { return; }
-        let new_stack: Box<HyeongStack> = Box::new(vec![]);
-        self.stacks.insert(id, StackWrapper::from_owned(new_stack));
+        match id {
+            0 | 1 | 2 => { return; },
+            i => { self.stacks.entry(i).or_insert(vec![]); }
+        }
     }
 
     pub fn flush(&mut self) -> io::Result<()> {
-        self.stacks.get_mut(&1).unwrap().flush()?;
-        self.stacks.get_mut(&2).unwrap().flush()
+        self.stdout.flush()?;
+        self.stderr.flush()
     }
 }
 
@@ -407,9 +335,9 @@ mod tests {
         let mut buf_err = vec![];
         {
             let stdin =  HyeongReadStack::new(test_str.as_bytes());
-            let mut stdout = HyeongWriteStack::new(&mut buf);
-            let mut stderr = HyeongWriteStack::new(&mut buf_err);
-            let mut manager = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
+            let stdout = HyeongWriteStack::new(&mut buf);
+            let stderr = HyeongWriteStack::new(&mut buf_err);
+            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
 
             manager.push(5, 13);     // 혀어어어엉.............
             manager.duplicate(3, 1); // 흐으윽.
@@ -424,9 +352,9 @@ mod tests {
         let mut buf_err = vec![];
         {
             let stdin =  HyeongReadStack::new(test_str.as_bytes());
-            let mut stdout = HyeongWriteStack::new(&mut buf);
-            let mut stderr = HyeongWriteStack::new(&mut buf_err);
-            let mut manager = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
+            let stdout = HyeongWriteStack::new(&mut buf);
+            let stderr = HyeongWriteStack::new(&mut buf_err);
+            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
 
             manager.duplicate(1, 0); // 흑
             manager.add(1, 2);       // 항..
@@ -450,9 +378,9 @@ mod tests {
         let mut buf_err = vec![];
         {
             let stdin =  HyeongReadStack::new(test_str.as_bytes());
-            let mut stdout = HyeongWriteStack::new(&mut buf);
-            let mut stderr = HyeongWriteStack::new(&mut buf_err);
-            let mut manager = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
+            let stdout = HyeongWriteStack::new(&mut buf);
+            let stderr = HyeongWriteStack::new(&mut buf_err);
+            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
 
             manager.push(4, 2);
             manager.push(2, 3);

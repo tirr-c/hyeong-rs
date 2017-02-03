@@ -1,19 +1,19 @@
-use std::io;
+use std::io::{self, Read, Write};
 use std::collections::HashMap;
 use super::structure::{Instruction, OperationType};
 use super::stack::{StackManager, HeartResult};
 
-pub struct Processor<'a, P> {
+pub struct Processor<P, I: Read, O: Write, E: Write> {
     inner: P,
     instructions: Vec<Instruction>,
     position: usize,
-    stacks: StackManager<'a>,
+    stacks: StackManager<I, O, E>,
     last_jump: Option<usize>,
     labels: HashMap<(usize, usize), usize>,
 }
 
-impl<'a, P> Processor<'a, P> {
-    pub fn with_stack_manager(inner: P, stacks: StackManager<'a>) -> Self {
+impl<P, I: Read, O: Write, E: Write> Processor<P, I, O, E> {
+    pub fn with_stack_manager(inner: P, stacks: StackManager<I, O, E>) -> Self {
         Processor {
             inner: inner,
             instructions: vec![],
@@ -25,13 +25,13 @@ impl<'a, P> Processor<'a, P> {
     }
 }
 
-impl<'a, P> Drop for Processor<'a, P> {
+impl<P, I: Read, O: Write, E: Write> Drop for Processor<P, I, O, E> {
     fn drop(&mut self) {
         self.stacks.flush().unwrap();
     }
 }
 
-impl<'a, P: Iterator<Item = Instruction>> Processor<'a, P> {
+impl<P: Iterator<Item = Instruction>, I: Read, O: Write, E: Write> Processor<P, I, O, E> {
     pub fn run(mut self) -> (isize, io::Result<()>) {
         loop {
             match self.advance() {
@@ -145,10 +145,10 @@ mod tests {
 
             let (exit_code, err) = {
                 let stdin  = HyeongReadStack::new(&input[..]);
-                let mut stdout = HyeongWriteStack::new(&mut output);
-                let mut stderr = HyeongWriteStack::new(&mut error);
+                let stdout = HyeongWriteStack::new(&mut output);
+                let stderr = HyeongWriteStack::new(&mut error);
                 let parser = Parser::from_str(source);
-                let stacks = StackManager::from_stacks(stdin.into(), (&mut stdout).into(), (&mut stderr).into());
+                let stacks = StackManager::from_stacks(stdin, stdout, stderr);
                 let processor = Processor::with_stack_manager(parser, stacks);
                 processor.run()
             };
