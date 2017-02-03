@@ -2,6 +2,14 @@
 name = "rshyeong"
 version = "0.1.0"
 authors = ["Wonwoo Choi <chwo9843@gmail.com>"]
+description = "Hyeong-lang interpreter"
+repository = "https://github.com/VBChunguk/hyeong-rs.git"
+readme = "README.md"
+keywords = ["esolang", "hyeong"]
+license = "MIT/Apache-2.0"
+
+[badges]
+travis-ci = { repository = "VBChunguk/hyeong-rs" }
 
 [features]
 big-rational = []
