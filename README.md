@@ -9,13 +9,13 @@ Rust 구현입니다.
 빌드와 설치를 합니다.
 
 ```
-cargo install --git https://github.com/VBChunguk/hyeong-rs.git
+cargo install rshyeong
 ```
 
 큰 유리수 처리를 원한다면 `big-rational` feature를 켜서 빌드합니다.
 
 ```
-cargo install --features big-rational --git https://github.com/VBChunguk/hyeong-rs.git
+cargo install --features big-rational rshyeong
 ```
 
 ## 실행하기
@@ -30,6 +30,7 @@ rshyeong --help
 
 ---
 
-MIT or Apache-2.0
+MIT/Apache-2.0
 
+![](https://img.shields.io/crates/v/rshyeong.svg)
 [![Build Status](https://travis-ci.org/VBChunguk/hyeong-rs.svg?branch=master)](https://travis-ci.org/VBChunguk/hyeong-rs)
