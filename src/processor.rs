@@ -34,11 +34,8 @@ impl<P, I: Read, O: Write, E: Write> Drop for Processor<P, I, O, E> {
 impl<P: Iterator<Item = Instruction>, I: Read, O: Write, E: Write> Processor<P, I, O, E> {
     pub fn run(mut self) -> (isize, io::Result<()>) {
         loop {
-            match self.advance() {
-                Some(x) => {
-                    return (x, self.stacks.flush());
-                },
-                None => { },
+            if let Some(x) = self.advance() {
+                return (x, self.stacks.flush());
             }
         }
     }
@@ -69,7 +66,7 @@ impl<P: Iterator<Item = Instruction>, I: Read, O: Write, E: Write> Processor<P, 
                 self.stacks.recip(instr.hangul_count(), instr.dots());
             },
             OperationType::Duplicate => {
-                self.stacks.duplicate(instr.hangul_count(), instr.dots());
+                self.stacks.dup(instr.hangul_count(), instr.dots());
             },
         }
 
@@ -104,38 +101,41 @@ mod tests {
     use super::super::stack::{HyeongReadStack, HyeongWriteStack, StackManager};
     use super::Processor;
 
+    macro_rules! test_path {
+        ($name:expr, $ext:expr) => (concat!("../snippets/", $name, ".", $ext));
+    }
     macro_rules! make_input {
         ($name:expr, ) => (b"");
         ($name:expr, input $($r:ident)*) => (
-            include_bytes!(concat!("../snippets/", $name, ".stdin"))
+            include_bytes!(test_path!($name, "stdin"))
             );
         ($name:expr, $i:ident $($next:ident)*) => (make_input!($name, $($next)*));
     }
     macro_rules! make_output {
         ($name:expr, ) => ((false, b""));
         ($name:expr, output $($r:ident)*) => (
-            (true, include_bytes!(concat!("../snippets/", $name, ".stdout")))
+            (true, include_bytes!(test_path!($name, "stdout")))
             );
         ($name:expr, $i:ident $($next:ident)*) => (make_output!($name, $($next)*));
     }
     macro_rules! make_error {
         ($name:expr, ) => ((false, b""));
         ($name:expr, error $($r:ident)*) => (
-            (true, include_bytes!(concat!("../snippets/", $name, ".stderr")))
+            (true, include_bytes!(test_path!($name, "stderr")))
             );
         ($name:expr, $i:ident $($next:ident)*) => (make_error!($name, $($next)*));
     }
     macro_rules! make_exitcode {
         ($name:expr, ) => ((false, 0));
         ($name:expr, exitcode $($r:ident)*) => (
-            (true, include!(concat!("../snippets/", $name, ".exitcode")))
+            (true, include!(test_path!($name, "exitcode")))
             );
         ($name:expr, $i:ident $($next:ident)*) => (make_exitcode!($name, $($next)*));
     }
 
     macro_rules! test {
         ($name:expr $(, $t:ident)*) => {
-            let source = include_str!(concat!("../snippets/", $name, ".hyeong"));
+            let source = include_str!(test_path!($name, "hyeong"));
             let input = make_input!($name, $($t)*);
             let (test_output, expected_output) = make_output!($name, $($t)*);
             let (test_error, expected_error) = make_error!($name, $($t)*);

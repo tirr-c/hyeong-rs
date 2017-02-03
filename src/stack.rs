@@ -86,7 +86,7 @@ pub enum HeartResult {
 }
 
 use std::collections::BTreeMap;
-pub struct StackManager<I: Read, O: Write, E: Write> {
+pub struct StackManager<I, O, E> {
     stdin:  HyeongReadStack<I>,
     stdout: HyeongWriteStack<O>,
     stderr: HyeongWriteStack<E>,
@@ -217,7 +217,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         stack_to.push_one(sum);
     }
 
-    pub fn duplicate(&mut self, count: usize, into: usize) {
+    pub fn dup(&mut self, count: usize, into: usize) {
         if self.check_exit() { return; }
         let value = {
             let stack_from = self.selected_stack_mut();
@@ -293,109 +293,115 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::rational::{Rational, HyeongRational};
-    use super::{HyeongStack, HyeongReadStack, HyeongWriteStack, StackManager};
+    mod rw {
+        use super::super::super::rational::{Rational, HyeongRational};
+        use super::super::{HyeongStack, HyeongReadStack, HyeongWriteStack};
 
-    #[test]
-    fn read_stack_pop() {
-        let test_str = "하앗...💕";
-        let mut stack = HyeongReadStack::new(test_str.as_bytes());
-        assert_eq!(stack.pop_one(), HyeongRational::from_u32('하' as u32));
-        assert_eq!(stack.pop_one(), HyeongRational::from_u32('앗' as u32));
-        assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
-        stack.push_one(HyeongRational::from_u32(14));
-        assert_eq!(stack.pop_one(), HyeongRational::from_u32(14));
-        assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
-        assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
-        assert_eq!(stack.pop_one(), HyeongRational::from_u32('💕' as u32));
-        assert!(stack.pop_one().is_nan());
-    }
-
-    #[test]
-    fn write_stack_push() {
-        let mut buf = vec![];
-        {
-            let mut stack = HyeongWriteStack::new(&mut buf);
-            stack.push_one(HyeongRational::from_u32('흑' as u32));
-            stack.push_one(HyeongRational::from_u32('.' as u32));
-            stack.push_one(HyeongRational::from_u32('.' as u32));
-            stack.push_one(HyeongRational::from_u32('!' as u32));
-            stack.push_one(Rational::from_integer((-32 as isize).into()).into());
-            stack.push_one(HyeongRational::NaN);
-            stack.push_one(Rational::new((65*3+2isize).into(), 3isize.into()).into());
-            stack.push_one(Rational::new((-11isize).into(), 7isize.into()).into());
-        };
-        assert_eq!(&buf[..], "흑..!32너무 커엇...A2".as_bytes());
-    }
-
-    #[test]
-    fn stack_manager_push_duplicate() {
-        let test_str = "";
-        let mut buf = vec![];
-        let mut buf_err = vec![];
-        {
-            let stdin =  HyeongReadStack::new(test_str.as_bytes());
-            let stdout = HyeongWriteStack::new(&mut buf);
-            let stderr = HyeongWriteStack::new(&mut buf_err);
-            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
-
-            manager.push(5, 13);     // 혀어어어엉.............
-            manager.duplicate(3, 1); // 흐으윽.
+        #[test]
+        fn read_stack_pop() {
+            let test_str = "하앗...💕";
+            let mut stack = HyeongReadStack::new(test_str.as_bytes());
+            assert_eq!(stack.pop_one(), HyeongRational::from_u32('하' as u32));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u32('앗' as u32));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
+            stack.push_one(HyeongRational::from_u32(14));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u32(14));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u32('💕' as u32));
+            assert!(stack.pop_one().is_nan());
         }
-        assert_eq!(&buf[..], "AAA".as_bytes());
+
+        #[test]
+        fn write_stack_push() {
+            let mut buf = vec![];
+            {
+                let mut stack = HyeongWriteStack::new(&mut buf);
+                stack.push_one(HyeongRational::from_u32('흑' as u32));
+                stack.push_one(HyeongRational::from_u32('.' as u32));
+                stack.push_one(HyeongRational::from_u32('.' as u32));
+                stack.push_one(HyeongRational::from_u32('!' as u32));
+                stack.push_one(Rational::from_integer((-32 as isize).into()).into());
+                stack.push_one(HyeongRational::NaN);
+                stack.push_one(Rational::new((65*3+2isize).into(), 3isize.into()).into());
+                stack.push_one(Rational::new((-11isize).into(), 7isize.into()).into());
+            };
+            assert_eq!(&buf[..], "흑..!32너무 커엇...A2".as_bytes());
+        }
     }
 
-    #[test]
-    fn stack_manager_add_mul() {
-        let test_str = "A";
-        let mut buf = vec![];
-        let mut buf_err = vec![];
-        {
-            let stdin =  HyeongReadStack::new(test_str.as_bytes());
-            let stdout = HyeongWriteStack::new(&mut buf);
-            let stderr = HyeongWriteStack::new(&mut buf_err);
-            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
+    mod manager {
+        use super::super::{HyeongReadStack, HyeongWriteStack, StackManager};
 
-            manager.duplicate(1, 0); // 흑
-            manager.add(1, 2);       // 항..
-            manager.add(1, 1);       // 항.
-            manager.push(1, 1);      // 형.
-            manager.push(1, 7);      // 형.......
-            manager.push(2, 2);      // 혀엉..
-            manager.push(1, 13);     // 형.............
-            manager.push(3, 9);      // 혀어엉.........
-            manager.mul(4, 0);       // 하아아아아앗
-            manager.add(2, 2);       // 하앙..
+        macro_rules! extract_arg {
+            ($target:ident, [ $t:ident $v:expr ] $($rest:tt)*) => {
+                if stringify!($target) == stringify!($t) {
+                    (true, $v)
+                } else {
+                    extract_arg!($target, $($rest)*)
+                }
+            };
+            ($target:ident, ) => ((false, ""));
         }
-        assert_eq!(&buf[..], "A".as_bytes());
-        assert_eq!(&buf_err[..], "너무 커엇...\u{2665}".as_bytes());
-    }
-
-    #[test]
-    fn stack_manager_mul_recip() {
-        let test_str = "밯망희";
-        let mut buf = vec![];
-        let mut buf_err = vec![];
-        {
-            let stdin =  HyeongReadStack::new(test_str.as_bytes());
-            let stdout = HyeongWriteStack::new(&mut buf);
-            let stderr = HyeongWriteStack::new(&mut buf_err);
-            let mut manager = StackManager::from_stacks(stdin, stdout, stderr);
-
-            manager.push(4, 2);
-            manager.push(2, 3);
-            manager.recip(1, 4);
-            manager.mul(2, 3);
-            manager.neg(1, 2);
-            manager.push(1, 0);
-            manager.duplicate(1, 0);
-            manager.neg(5, 2);
-            manager.add(1, 4);
-            manager.add(1, 1);
-            manager.add(1, 1);
-            manager.add(1, 1);
+        macro_rules! make_test {
+            ($m:ident $test:block $(, $t:ident $v:expr)*) => {{
+                let (_, input) = extract_arg!(input, $([ $t $v ])*);
+                let (test_output, expected_output) = extract_arg!(output, $([ $t $v ])*);
+                let (test_error, expected_error) = extract_arg!(error, $([ $t $v ])*);
+                let mut output = vec![];
+                let mut error = vec![];
+                {
+                    let stdin = HyeongReadStack::new(input.as_bytes());
+                    let stdout = HyeongWriteStack::new(&mut output);
+                    let stderr = HyeongWriteStack::new(&mut error);
+                    let mut $m = StackManager::from_stacks(stdin, stdout, stderr);
+                    $test
+                }
+                if test_output { assert_eq!(&output[..], expected_output.as_bytes()); }
+                if test_error  { assert_eq!( &error[..],  expected_error.as_bytes()); }
+            }};
         }
-        assert_eq!(&buf[..], "481754758155148".as_bytes());
-        assert_eq!(&buf_err[..], "2너무 커엇...".as_bytes());
+
+        #[test]
+        fn stack_manager_push_dup() {
+            make_test!(manager {
+                manager.push(5, 13);
+                manager.dup(3, 1);
+            }, output "AAA");
+        }
+
+        #[test]
+        fn stack_manager_add_mul() {
+            make_test!(manager {
+                manager.dup(1, 0); // 흑
+                manager.add(1, 2);       // 항..
+                manager.add(1, 1);       // 항.
+                manager.push(1, 1);      // 형.
+                manager.push(1, 7);      // 형.......
+                manager.push(2, 2);      // 혀엉..
+                manager.push(1, 13);     // 형.............
+                manager.push(3, 9);      // 혀어엉.........
+                manager.mul(4, 0);       // 하아아아아앗
+                manager.add(2, 2);       // 하앙..
+            }, input "A", output "A", error "너무 커엇...\u{2665}");
+        }
+
+        #[test]
+        fn stack_manager_mul_recip() {
+            make_test!(manager {
+                manager.push(4, 2);
+                manager.push(2, 3);
+                manager.recip(1, 4);
+                manager.mul(2, 3);
+                manager.neg(1, 2);
+                manager.push(1, 0);
+                manager.dup(1, 0);
+                manager.neg(5, 2);
+                manager.add(1, 4);
+                manager.add(1, 1);
+                manager.add(1, 1);
+                manager.add(1, 1);
+            }, input "밯망희", output "481754758155148", error "2너무 커엇...");
+        }
     }
 }
