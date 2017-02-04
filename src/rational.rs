@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg};
-use num::Zero;
+use num::{Zero, One};
 
 #[cfg(feature = "big-rational")]
 pub use num::rational::BigRational as Rational;
@@ -178,6 +178,23 @@ impl Neg for HyeongRational {
             HyeongRational::NaN => HyeongRational::NaN,
             HyeongRational::Rational(r) => (-r).into(),
         }
+    }
+}
+
+impl Zero for HyeongRational {
+    fn zero() -> Self {
+        HyeongRational::Rational(Rational::zero())
+    }
+    fn is_zero(&self) -> bool {
+        if let &HyeongRational::Rational(ref r) = self {
+            r.is_zero()
+        } else { false }
+    }
+}
+
+impl One for HyeongRational {
+    fn one() -> Self {
+        HyeongRational::Rational(Rational::one())
     }
 }
 

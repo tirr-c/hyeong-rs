@@ -2,6 +2,7 @@ use std::io::{self, Read, Write};
 use super::structure::HeartTree;
 use super::rational::{Rational, HyeongRational};
 use super::utf8::read_codepoint;
+use num::{Zero, One};
 
 
 pub trait HyeongStack {
@@ -41,12 +42,14 @@ impl<R: Read> HyeongStack for HyeongReadStack<R> {
 
     fn pop_one(&mut self) -> HyeongRational {
         if self.stack.is_empty() {
-            return match read_codepoint(&mut self.inner) {
-                Ok(c) => HyeongRational::from_u32(c),
-                Err(_) => HyeongRational::NaN,
-            };
+            if let Ok(c) = read_codepoint(&mut self.inner) {
+                HyeongRational::from_u32(c)
+            } else {
+                HyeongRational::NaN
+            }
+        } else {
+            self.stack.pop_one()
         }
-        self.stack.pop_one()
     }
 }
 
@@ -100,16 +103,16 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
                        stdout: HyeongWriteStack<O>,
                        stderr: HyeongWriteStack<E>
                       ) -> Self {
-        let mut stack = StackManager {
+        let mut stacks = BTreeMap::new();
+        stacks.insert(3, vec![]);
+        StackManager {
             stdin: stdin,
             stdout: stdout,
             stderr: stderr,
-            stacks: BTreeMap::new(),
-            selected: 0,
+            stacks: stacks,
+            selected: 3,
             exit_code: None,
-        };
-        stack.select(3);
-        stack
+        }
     }
 
     fn check_exit(&mut self) -> bool {
@@ -150,7 +153,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     pub fn add(&mut self, count: usize, to: usize) {
         if self.check_exit() { return; }
         let sum = {
-            let mut sum = HyeongRational::from_u32(0);
+            let mut sum = HyeongRational::zero();
             let stack_from = self.selected_stack_mut();
             for _ in 0..count {
                 sum += stack_from.pop_one();
@@ -165,7 +168,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     pub fn mul(&mut self, count: usize, to: usize) {
         if self.check_exit() { return; }
         let sum = {
-            let mut sum = HyeongRational::from_u32(1);
+            let mut sum = HyeongRational::one();
             let stack_from = self.selected_stack_mut();
             for _ in 0..count {
                 sum *= stack_from.pop_one();
@@ -185,12 +188,13 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             for _ in 0..count {
                 temp.push(-stack_from.pop_one());
             }
-            let sum = temp.iter().fold(HyeongRational::from_u32(0), |a, b| a + b.clone());
-            let mut temp = temp.into_iter();
-            while let Some(r) = temp.next_back() {
-                stack_from.push_one(r);
+            {
+                let mut it = temp.iter();
+                while let Some(r) = it.next_back() {
+                    stack_from.push_one(r.clone());
+                }
             }
-            sum
+            temp.into_iter().fold(HyeongRational::zero(), |a, b| a + b)
         };
         self.make_stack(to);
         let stack_to = self.stack_mut(to);
@@ -205,12 +209,13 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             for _ in 0..count {
                 temp.push(stack_from.pop_one().recip());
             }
-            let sum = temp.iter().fold(HyeongRational::from_u32(1), |a, b| a * b.clone());
-            let mut temp = temp.into_iter();
-            while let Some(r) = temp.next_back() {
-                stack_from.push_one(r);
+            {
+                let mut it = temp.iter();
+                while let Some(r) = it.next_back() {
+                    stack_from.push_one(r.clone());
+                }
             }
-            sum
+            temp.into_iter().fold(HyeongRational::one(), |a, b| a * b)
         };
         self.make_stack(to);
         let stack_to = self.stack_mut(to);
@@ -238,18 +243,12 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             &HeartTree::Return => HeartResult::Return,
             &HeartTree::Nil => HeartResult::Nil,
             &HeartTree::LessThan(ref l, ref r) => {
-                if self.stack_less_than(target) {
-                    self.process_hearts(l, target)
-                } else {
-                    self.process_hearts(r, target)
-                }
+                let into = if self.stack_less_than(target) { l } else { r };
+                self.process_hearts(into, target)
             },
             &HeartTree::Equals(ref l, ref r) => {
-                if self.stack_equals(target) {
-                    self.process_hearts(l, target)
-                } else {
-                    self.process_hearts(r, target)
-                }
+                let into = if self.stack_equals(target) { l } else { r };
+                self.process_hearts(into, target)
             },
         }
     }
