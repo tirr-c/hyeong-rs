@@ -169,4 +169,9 @@ mod tests {
     fn fibonacci() {
         test!("fibonacci", output, exitcode);
     }
+
+    #[test]
+    fn stderr() {
+        test!("stderr", error, exitcode);
+    }
 }
