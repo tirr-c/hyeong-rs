@@ -1,19 +1,10 @@
-extern crate num;
 #[macro_use]
 extern crate clap;
-
-mod structure;
-mod parser;
-mod utf8;
-mod rational;
-mod stack;
-mod processor;
+extern crate rshyeong;
 
 use std::fs::File;
 use std::io::{Read, Write, BufWriter};
-use self::parser::Parser;
-use self::stack::{HyeongReadStack, HyeongWriteStack, StackManager};
-use self::processor::Processor;
+use rshyeong::{Parser, Processor, HyeongReadStack, HyeongWriteStack, StackManager};
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
