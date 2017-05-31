@@ -17,25 +17,25 @@ enum HangulStartType {
 
 impl HangulStartType {
     fn from_char(c: char) -> Option<Self> {
+        use self::HangulStartType::*;
         match c {
-            '혀' => Some(HangulStartType::Hyeo  ),
-            '하' => Some(HangulStartType::Ha    ),
-            '흐' => Some(HangulStartType::Heu   ),
-            '형' => Some(HangulStartType::Hyeong),
-            '항' => Some(HangulStartType::Hang  ),
-            '핫' => Some(HangulStartType::Hat   ),
-            '흣' => Some(HangulStartType::Heut  ),
-            '흡' => Some(HangulStartType::Heup  ),
-            '흑' => Some(HangulStartType::Heuk  ),
+            '혀' => Some(Hyeo  ),
+            '하' => Some(Ha    ),
+            '흐' => Some(Heu   ),
+            '형' => Some(Hyeong),
+            '항' => Some(Hang  ),
+            '핫' => Some(Hat   ),
+            '흣' => Some(Heut  ),
+            '흡' => Some(Heup  ),
+            '흑' => Some(Heuk  ),
             _    => None,
         }
     }
 
     fn is_self_ending(&self) -> bool {
+        use self::HangulStartType::*;
         match *self {
-            HangulStartType::Hyeo => false,
-            HangulStartType::Ha   => false,
-            HangulStartType::Heu  => false,
+            Hyeo | Ha | Heu => false,
             _ => true,
         }
     }
@@ -80,7 +80,7 @@ impl Token {
             '\u{2661}' => Some(Token::ReturnHeart),
             '!' => Some(Token::ExclamationMark),
             '?' => Some(Token::QuestionMark),
-            _ => HEART_MARKS.iter().position(|&i| i == c).map(|p| Token::Heart(p))
+            _ => HEART_MARKS.iter().position(|&i| i == c).map(Token::Heart)
         }
     }
 }
@@ -93,7 +93,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn from_str(code: &'a str) -> Self {
+    pub fn new(code: &'a str) -> Self {
         let mut parser = Parser {
             code: code.chars(),
             operation_cache: None,
@@ -138,7 +138,7 @@ impl<'a> Parser<'a> {
         start: HangulStartType, iter: &mut T
         ) -> Option<(usize, char)> {
         let mut cnt = 0;
-        while let Some(c) = iter.next() {
+        for c in iter {
             if c >= '가' && c <= '힣' { cnt += 1; }
             let end = match start {
                 HangulStartType::Hyeo => '엉' == c,
@@ -189,7 +189,7 @@ impl<'a> Iterator for Parser<'a> {
         for token in hearts {
             match *token {
                 Token::Heart(id) => {
-                    current_heart = current_heart.or(Some(HeartTree::Heart(id)));
+                    current_heart = current_heart.or_else(|| Some(HeartTree::Heart(id)));
                 },
                 Token::ReturnHeart => {
                     current_heart = current_heart.or(Some(HeartTree::Return));
@@ -321,14 +321,14 @@ mod tests {
 
         #[test]
         fn simple() {
-            let mut parser = Parser::from_str("혀엉...");
+            let mut parser = Parser::new("혀엉...");
             assert_instruction!(parser, make_instruction!('형', 2, 3, _));
             assert_instruction!(parser);
         }
 
         #[test]
         fn self_ending() {
-            let mut parser = Parser::from_str("형 항. 핫... 흡.. 흑. 흣.....");
+            let mut parser = Parser::new("형 항. 핫... 흡.. 흑. 흣.....");
             assert_instruction!(parser, make_instruction!('형', 1, 0, _));
             assert_instruction!(parser, make_instruction!('항', 1, 1, _));
             assert_instruction!(parser, make_instruction!('핫', 1, 3, _));
@@ -340,13 +340,13 @@ mod tests {
 
         #[test]
         fn noop() {
-            let mut parser = Parser::from_str("흐으응... 너무 커엇...");
+            let mut parser = Parser::new("흐으응... 너무 커엇...");
             assert_instruction!(parser);
         }
 
         #[test]
         fn multiple() {
-            let mut parser = Parser::from_str("혀엉... 흑. 흐읏..... 하아아앙...");
+            let mut parser = Parser::new("혀엉... 흑. 흐읏..... 하아아앙...");
             assert_instruction!(parser, make_instruction!('형', 2, 3, _));
             assert_instruction!(parser, make_instruction!('흑', 1, 1, _));
             assert_instruction!(parser, make_instruction!('흣', 2, 5, _));
@@ -357,7 +357,7 @@ mod tests {
         #[test]
         fn hangul_syllables() {
             // WHAT AM I DOING
-            let mut parser = Parser::from_str("혀내 이름은 메구밍!엉... 흐아크 위저드를 생업으로 삼고 있으며읍..... 최강의 공격마법, 하폭렬마법앙....을 흐으으... 펼치는 자아읏...!");
+            let mut parser = Parser::new("혀내 이름은 메구밍!엉... 흐아크 위저드를 생업으로 삼고 있으며읍..... 최강의 공격마법, 하폭렬마법앙....을 흐으으... 펼치는 자아읏...!");
             assert_instruction!(parser, make_instruction!('형',  9, 3, _));
             assert_instruction!(parser, make_instruction!('흡', 17, 5, _));
             assert_instruction!(parser, make_instruction!('항',  6, 4, _));
@@ -367,19 +367,19 @@ mod tests {
 
         #[test]
         fn very_long_hangul() {
-            let mut parser = Parser::from_str("혀하앙... 흐으읏.. 흡 흐윽...... 혀어어엉.......");
+            let mut parser = Parser::new("혀하앙... 흐으읏.. 흡 흐윽...... 혀어어엉.......");
             assert_instruction!(parser, make_instruction!('형', 13, 7, _));
             assert_instruction!(parser);
 
             // Testcase from https://github.com/xnuk/hyeong-testcases
-            let mut parser = Parser::from_str("혀일....이삼사오육앙♥앗?!읏♡읍...엉");
+            let mut parser = Parser::new("혀일....이삼사오육앙♥앗?!읏♡읍...엉");
             assert_instruction!(parser, make_instruction!('형', 12, 0, _));
             assert_instruction!(parser);
         }
 
         #[test]
         fn endless_hangul() {
-            let mut parser = Parser::from_str("혀형하앙... 흐으읏.. 흡 흐윽...... 하앗.");
+            let mut parser = Parser::new("혀형하앙... 흐으읏.. 흡 흐윽...... 하앗.");
             assert_instruction!(parser, make_instruction!('형', 1, 0, _));
             assert_instruction!(parser, make_instruction!('항', 2, 3, _));
             assert_instruction!(parser, make_instruction!('흣', 3, 2, _));
@@ -392,7 +392,7 @@ mod tests {
         #[test]
         fn triple_dots() {
             // Testcase from https://github.com/xnuk/hyeong-testcases
-            let mut parser = Parser::from_str("하앗. … ⋯ ⋮");
+            let mut parser = Parser::new("하앗. … ⋯ ⋮");
             assert_instruction!(parser, make_instruction!('핫', 2, 10, _));
             assert_instruction!(parser);
         }
@@ -403,19 +403,19 @@ mod tests {
             let sparkling_heart_idx = HEART_MARKS.iter().position(|c| *c == '💖').unwrap();
 
             // Testcase from https://github.com/xnuk/hyeong-testcases
-            let mut parser = Parser::from_str("하앗....♥♡!");
+            let mut parser = Parser::new("하앗....♥♡!");
             assert_instruction!(parser, make_instruction!('핫', 2, 4, eq[black_heart_suit_idx][_]));
             assert_instruction!(parser);
 
-            let mut parser = Parser::from_str("하아앗.. . ? ♥ ! 💖");
+            let mut parser = Parser::new("하아앗.. . ? ♥ ! 💖");
             assert_instruction!(parser, make_instruction!('핫', 3, 3, less[_][eq[black_heart_suit_idx][sparkling_heart_idx]]));
             assert_instruction!(parser);
 
-            let mut parser = Parser::from_str("하아앗...! ♥ ? 💖");
+            let mut parser = Parser::new("하아앗...! ♥ ? 💖");
             assert_instruction!(parser, make_instruction!('핫', 3, 3, less[eq[_][black_heart_suit_idx]][sparkling_heart_idx]));
             assert_instruction!(parser);
 
-            let mut parser = Parser::from_str("흐읏...!♡!");
+            let mut parser = Parser::new("흐읏...!♡!");
             assert_instruction!(parser, make_instruction!('흣', 2, 3, eq[_][eq[ret][_]]));
             assert_instruction!(parser);
         }

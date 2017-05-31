@@ -53,15 +53,13 @@ pub enum OperationType {
 
 impl Operation {
     pub fn from_chars(start: char, end: Option<char>, count: usize) -> Self {
-        // sanity check
-        assert!(end.is_none() == "형항핫흣흡흑".contains(start));
         if let Some(c) = end {
             assert!(match start {
                 '혀' => '엉' == end.unwrap(),
                 '하' => "앙앗".contains(end.unwrap()),
                 '흐' => "읏읍윽".contains(end.unwrap()),
                 _ => false
-            });
+            }, "Invalid start-end character pair");
             Operation { op_type: match c {
                 '엉' => OperationType::Push,
                 '앙' => OperationType::Add,
@@ -69,7 +67,7 @@ impl Operation {
                 '읏' => OperationType::Negate,
                 '읍' => OperationType::Reciprocate,
                 '윽' => OperationType::Duplicate,
-                _ => panic!("Invalid end character")
+                _ => unreachable!(),
             }, hangul_count: count }
         } else {
             Operation { op_type: match start {
@@ -79,7 +77,7 @@ impl Operation {
                 '흣' => OperationType::Negate,
                 '흡' => OperationType::Reciprocate,
                 '흑' => OperationType::Duplicate,
-                _ => panic!("Should not happen")
+                _ => panic!("Non-self-ending character without end character"),
             }, hangul_count: 1 }
         }
     }

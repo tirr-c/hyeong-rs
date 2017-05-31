@@ -57,7 +57,7 @@ fn main() {
 
 
     let stacks = StackManager::from_stacks(stdin, stdout, stderr);
-    let parser = Parser::from_str(&source_string);
+    let parser = Parser::new(&source_string);
     let processor = Processor::with_stack_manager(parser, stacks);
 
     let (exit_code, err) = processor.run();

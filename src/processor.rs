@@ -147,7 +147,7 @@ mod tests {
                 let stdin  = HyeongReadStack::new(&input[..]);
                 let stdout = HyeongWriteStack::new(&mut output);
                 let stderr = HyeongWriteStack::new(&mut error);
-                let parser = Parser::from_str(source);
+                let parser = Parser::new(source);
                 let stacks = StackManager::from_stacks(stdin, stdout, stderr);
                 let processor = Processor::with_stack_manager(parser, stacks);
                 processor.run()

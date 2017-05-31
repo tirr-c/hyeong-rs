@@ -133,6 +133,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     fn stack_mut(&mut self, id: usize) -> &mut HyeongStack {
+        self.make_stack(id);
         match id {
             0 => &mut self.stdin,
             1 => &mut self.stdout,
@@ -160,9 +161,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             }
             sum
         };
-        self.make_stack(to);
-        let stack_to = self.stack_mut(to);
-        stack_to.push_one(sum);
+        self.stack_mut(to).push_one(sum);
     }
 
     pub fn mul(&mut self, count: usize, to: usize) {
@@ -175,9 +174,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             }
             sum
         };
-        self.make_stack(to);
-        let stack_to = self.stack_mut(to);
-        stack_to.push_one(sum);
+        self.stack_mut(to).push_one(sum);
     }
 
     pub fn neg(&mut self, count: usize, to: usize) {
@@ -196,9 +193,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             }
             temp.into_iter().fold(HyeongRational::zero(), |a, b| a + b)
         };
-        self.make_stack(to);
-        let stack_to = self.stack_mut(to);
-        stack_to.push_one(sum);
+        self.stack_mut(to).push_one(sum);
     }
 
     pub fn recip(&mut self, count: usize, to: usize) {
@@ -217,9 +212,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             }
             temp.into_iter().fold(HyeongRational::one(), |a, b| a * b)
         };
-        self.make_stack(to);
-        let stack_to = self.stack_mut(to);
-        stack_to.push_one(sum);
+        self.stack_mut(to).push_one(sum);
     }
 
     pub fn dup(&mut self, count: usize, into: usize) {
@@ -230,7 +223,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             stack_from.push_one(value.clone());
             value
         };
-        self.select(into);
+        self.selected = into;
         let stack_to = self.selected_stack_mut();
         for _ in 0..count {
             stack_to.push_one(value.clone());
@@ -238,15 +231,15 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn process_hearts(&mut self, heart: &HeartTree, target: usize) -> HeartResult {
-        match heart {
-            &HeartTree::Heart(id) => HeartResult::Heart(id),
-            &HeartTree::Return => HeartResult::Return,
-            &HeartTree::Nil => HeartResult::Nil,
-            &HeartTree::LessThan(ref l, ref r) => {
+        match *heart {
+            HeartTree::Heart(id) => HeartResult::Heart(id),
+            HeartTree::Return => HeartResult::Return,
+            HeartTree::Nil => HeartResult::Nil,
+            HeartTree::LessThan(ref l, ref r) => {
                 let into = if self.stack_less_than(target) { l } else { r };
                 self.process_hearts(into, target)
             },
-            &HeartTree::Equals(ref l, ref r) => {
+            HeartTree::Equals(ref l, ref r) => {
                 let into = if self.stack_equals(target) { l } else { r };
                 self.process_hearts(into, target)
             },
@@ -255,37 +248,25 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
 
     fn stack_less_than(&mut self, target: usize) -> bool {
         let target = HyeongRational::from_usize(target);
-        let value = {
-            let stack_from = self.selected_stack_mut();
-            stack_from.pop_one()
-        };
+        let value = self.selected_stack_mut().pop_one();
         value < target
     }
 
     fn stack_equals(&mut self, target: usize) -> bool {
         let target = HyeongRational::from_usize(target);
-        let value = {
-            let stack_from = self.selected_stack_mut();
-            stack_from.pop_one()
-        };
+        let value = self.selected_stack_mut().pop_one();
         value == target
-    }
-
-    fn select(&mut self, id: usize) {
-        self.make_stack(id);
-        self.selected = id;
     }
 
     fn make_stack(&mut self, id: usize) {
         match id {
             0 | 1 | 2 => { return; },
-            i => { self.stacks.entry(i).or_insert(vec![]); }
+            i => { self.stacks.entry(i).or_insert_with(Vec::new); }
         }
     }
 
     pub fn flush(&mut self) -> io::Result<()> {
-        self.stdout.flush()?;
-        self.stderr.flush()
+        self.stdout.flush().and_then(|_| self.stderr.flush())
     }
 }
 
