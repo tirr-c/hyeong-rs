@@ -37,15 +37,15 @@ impl HyeongRational {
         HyeongRational::Rational(r)
     }
     pub fn is_nan(&self) -> bool {
-        match self {
-            &HyeongRational::NaN => true,
+        match *self {
+            HyeongRational::NaN => true,
             _ => false,
         }
     }
     pub fn rational(&self) -> &Rational {
-        match self {
-            &HyeongRational::NaN => panic!("the value is NaN"),
-            &HyeongRational::Rational(ref r) => r,
+        match *self {
+            HyeongRational::NaN => panic!("the value is NaN"),
+            HyeongRational::Rational(ref r) => r,
         }
     }
     pub fn into_rational(self) -> Rational {
@@ -55,9 +55,9 @@ impl HyeongRational {
         }
     }
     pub fn recip(&self) -> HyeongRational {
-        match self {
-            &HyeongRational::NaN => HyeongRational::NaN,
-            &HyeongRational::Rational(ref r) => {
+        match *self {
+            HyeongRational::NaN => HyeongRational::NaN,
+            HyeongRational::Rational(ref r) => {
                 if r.is_zero() { HyeongRational::NaN }
                 else { r.recip().into() }
             }
@@ -101,8 +101,8 @@ impl From<Option<HyeongRational>> for HyeongRational {
 impl Display for HyeongRational {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
         use num::traits::cast::ToPrimitive;
-        match self {
-            &HyeongRational::Rational(ref r) => {
+        match *self {
+            HyeongRational::Rational(ref r) => {
                 let int = r.floor().to_integer();
                 let zero = 0isize.into();
                 if int >= zero {
@@ -112,7 +112,7 @@ impl Display for HyeongRational {
                     } else {
                         let int = int
                             .to_u32()
-                            .and_then(|c| ::std::char::from_u32(c))
+                            .and_then(::std::char::from_u32)
                             .unwrap();
                         write!(f, "{}", int)
                     }
@@ -120,7 +120,7 @@ impl Display for HyeongRational {
                     write!(f, "{}", -int)
                 }
             },
-            &HyeongRational::NaN => {
+            HyeongRational::NaN => {
                 write!(f, "너무 커엇...")
             },
         }
@@ -186,7 +186,7 @@ impl Zero for HyeongRational {
         HyeongRational::Rational(Rational::zero())
     }
     fn is_zero(&self) -> bool {
-        if let &HyeongRational::Rational(ref r) = self {
+        if let HyeongRational::Rational(ref r) = *self {
             r.is_zero()
         } else { false }
     }
