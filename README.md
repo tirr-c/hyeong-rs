@@ -33,4 +33,4 @@ rshyeong --help
 MIT/Apache-2.0
 
 ![](https://img.shields.io/crates/v/rshyeong.svg)
-[![Build Status](https://travis-ci.org/VBChunguk/hyeong-rs.svg?branch=master)](https://travis-ci.org/VBChunguk/hyeong-rs)
+[![Build Status](https://travis-ci.org/tirr-c/hyeong-rs.svg?branch=master)](https://travis-ci.org/tirr-c/hyeong-rs)
