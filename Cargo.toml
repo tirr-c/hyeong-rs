@@ -7,7 +7,7 @@ repository = "https://github.com/tirr-c/hyeong-rs.git"
 readme = "README.md"
 keywords = ["esolang", "hyeong"]
 license = "MIT/Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [badges]
 travis-ci = { repository = "tirr-c/hyeong-rs" }
