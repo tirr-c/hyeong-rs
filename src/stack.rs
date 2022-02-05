@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+use std::io::prelude::*;
+
+use num::{One, Zero};
+
 use super::rational::{HyeongRational, Rational};
 use super::structure::HeartTree;
 use super::utf8::read_codepoint;
-use num::{One, Zero};
-use std::io::{self, Read, Write};
 
 pub trait HyeongStack {
     fn push_one(&mut self, value: HyeongRational);
@@ -26,7 +29,7 @@ pub struct HyeongReadStack<R> {
 
 impl<R> HyeongReadStack<R> {
     pub fn new(inner: R) -> Self {
-        HyeongReadStack {
+        Self {
             inner,
             stack: vec![],
         }
@@ -57,12 +60,12 @@ pub struct HyeongWriteStack<W> {
 
 impl<W> HyeongWriteStack<W> {
     pub fn new(inner: W) -> Self {
-        HyeongWriteStack { inner }
+        Self { inner }
     }
 }
 
 impl<W: Write> HyeongWriteStack<W> {
-    fn flush(&mut self) -> io::Result<()> {
+    fn flush(&mut self) -> std::io::Result<()> {
         self.inner.flush()
     }
 }
@@ -84,12 +87,11 @@ pub enum HeartResult {
     Nil,
 }
 
-use std::collections::BTreeMap;
 pub struct StackManager<I, O, E> {
     stdin: HyeongReadStack<I>,
     stdout: HyeongWriteStack<O>,
     stderr: HyeongWriteStack<E>,
-    stacks: BTreeMap<usize, Vec<HyeongRational>>,
+    stacks: HashMap<usize, Vec<HyeongRational>>,
     selected: usize,
     exit_code: Option<isize>,
 }
@@ -100,9 +102,9 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         stdout: HyeongWriteStack<O>,
         stderr: HyeongWriteStack<E>,
     ) -> Self {
-        let mut stacks = BTreeMap::new();
+        let mut stacks = HashMap::new();
         stacks.insert(3, vec![]);
-        StackManager {
+        Self {
             stdin,
             stdout,
             stderr,
@@ -188,11 +190,10 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             for _ in 0..count {
                 temp.push(-stack_from.pop_one());
             }
-            {
-                let mut it = temp.iter();
-                while let Some(r) = it.next_back() {
-                    stack_from.push_one(r.clone());
-                }
+
+            let mut it = temp.iter();
+            while let Some(r) = it.next_back() {
+                stack_from.push_one(r.clone());
             }
             temp.into_iter().fold(HyeongRational::zero(), |a, b| a + b)
         };
@@ -209,11 +210,10 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             for _ in 0..count {
                 temp.push(stack_from.pop_one().recip());
             }
-            {
-                let mut it = temp.iter();
-                while let Some(r) = it.next_back() {
-                    stack_from.push_one(r.clone());
-                }
+
+            let mut it = temp.iter();
+            while let Some(r) = it.next_back() {
+                stack_from.push_one(r.clone());
             }
             temp.into_iter().fold(HyeongRational::one(), |a, b| a * b)
         };
@@ -238,15 +238,15 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn process_hearts(&mut self, heart: &HeartTree, target: usize) -> HeartResult {
-        match *heart {
-            HeartTree::Heart(id) => HeartResult::Heart(id),
+        match heart {
+            HeartTree::Heart(id) => HeartResult::Heart(*id),
             HeartTree::Return => HeartResult::Return,
             HeartTree::Nil => HeartResult::Nil,
-            HeartTree::LessThan(ref l, ref r) => {
+            HeartTree::LessThan(l, r) => {
                 let into = if self.stack_less_than(target) { l } else { r };
                 self.process_hearts(into, target)
             }
-            HeartTree::Equals(ref l, ref r) => {
+            HeartTree::Equals(l, r) => {
                 let into = if self.stack_equals(target) { l } else { r };
                 self.process_hearts(into, target)
             }
@@ -274,7 +274,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         }
     }
 
-    pub fn flush(&mut self) -> io::Result<()> {
+    pub fn flush(&mut self) -> std::io::Result<()> {
         self.stdout.flush().and_then(|_| self.stderr.flush())
     }
 }
@@ -282,8 +282,8 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
 #[cfg(test)]
 mod tests {
     mod rw {
-        use super::super::super::rational::{HyeongRational, Rational};
-        use super::super::{HyeongReadStack, HyeongStack, HyeongWriteStack};
+        use crate::rational::{HyeongRational, Rational};
+        use crate::stack::{HyeongReadStack, HyeongStack, HyeongWriteStack};
 
         #[test]
         fn read_stack_pop() {
@@ -319,7 +319,7 @@ mod tests {
     }
 
     mod manager {
-        use super::super::{HyeongReadStack, HyeongWriteStack, StackManager};
+        use crate::stack::{HyeongReadStack, HyeongWriteStack, StackManager};
 
         macro_rules! extract_arg {
             ($target:ident, [ $t:ident $v:expr ] $($rest:tt)*) => {

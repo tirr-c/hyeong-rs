@@ -1,26 +1,23 @@
-#[macro_use]
-extern crate clap;
-extern crate rshyeong;
-
-use rshyeong::{HyeongReadStack, HyeongWriteStack, Parser, Processor, StackManager};
 use std::fs::File;
 use std::io::{BufWriter, Read, Write};
 
+use rshyeong::{HyeongReadStack, HyeongWriteStack, Parser, Processor, StackManager};
+
 fn main() {
-    let yaml = load_yaml!("cli.yml");
+    let yaml = clap::load_yaml!("cli.yml");
     let matches = clap::App::from_yaml(yaml).get_matches();
 
     let source_file = matches.value_of("SOURCE").unwrap();
     let mut source = match File::open(source_file) {
         Ok(f) => f,
         Err(e) => {
-            println!("Cannot open source file {}: {}", source_file, e);
+            eprintln!("Cannot open source file {}: {}", source_file, e);
             std::process::exit(2);
         }
     };
     let mut source_string = String::new();
     if let Err(e) = source.read_to_string(&mut source_string) {
-        println!("Cannot read source file {}: {}", source_file, e);
+        eprintln!("Cannot read source file {}: {}", source_file, e);
         std::process::exit(2);
     }
 
@@ -31,7 +28,7 @@ fn main() {
         let file = match File::open(input_file) {
             Ok(f) => f,
             Err(e) => {
-                println!("Cannot open input file {}: {}", input_file, e);
+                eprintln!("Cannot open input file {}: {}", input_file, e);
                 std::process::exit(2);
             }
         };
@@ -45,7 +42,7 @@ fn main() {
         let file = match File::create(output_file) {
             Ok(f) => f,
             Err(e) => {
-                println!("Cannot open output file {}: {}", output_file, e);
+                eprintln!("Cannot open output file {}: {}", output_file, e);
                 std::process::exit(2);
             }
         };
@@ -60,16 +57,11 @@ fn main() {
 
     let (exit_code, err) = processor.run();
     if let Err(e) = err {
-        if writeln!(
-            std::io::stderr(),
+        eprintln!(
             "Error during flushing: {}\nExit code was: {}",
             e,
-            exit_code
-        )
-        .is_err()
-        {
-            std::process::exit(3);
-        }
+            exit_code,
+        );
         std::process::exit(3);
     }
     std::process::exit(exit_code as i32);
