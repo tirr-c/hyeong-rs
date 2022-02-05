@@ -1,7 +1,7 @@
-use std::io::{self, Read, Write};
-use std::collections::HashMap;
+use super::stack::{HeartResult, StackManager};
 use super::structure::{Instruction, OperationType};
-use super::stack::{StackManager, HeartResult};
+use std::collections::HashMap;
+use std::io::{self, Read, Write};
 
 pub struct Processor<P, I: Read, O: Write, E: Write> {
     inner: P,
@@ -52,22 +52,22 @@ impl<P: Iterator<Item = Instruction>, I: Read, O: Write, E: Write> Processor<P, 
         match instr.operation_type() {
             OperationType::Push => {
                 self.stacks.push(instr.hangul_count(), instr.dots());
-            },
+            }
             OperationType::Add => {
                 self.stacks.add(instr.hangul_count(), instr.dots());
-            },
+            }
             OperationType::Multiply => {
                 self.stacks.mul(instr.hangul_count(), instr.dots());
-            },
+            }
             OperationType::Negate => {
                 self.stacks.neg(instr.hangul_count(), instr.dots());
-            },
+            }
             OperationType::Reciprocate => {
                 self.stacks.recip(instr.hangul_count(), instr.dots());
-            },
+            }
             OperationType::Duplicate => {
                 self.stacks.dup(instr.hangul_count(), instr.dots());
-            },
+            }
         }
 
         let param = instr.hangul_times_dots();
@@ -80,20 +80,25 @@ impl<P: Iterator<Item = Instruction>, I: Read, O: Write, E: Write> Processor<P, 
                 if next != self.position {
                     self.last_jump = Some(self.position);
                     self.position = next;
-                } else { self.position += 1; }
-            },
+                } else {
+                    self.position += 1;
+                }
+            }
             HeartResult::Return => {
                 if let Some(next) = self.last_jump {
                     self.position = next;
-                } else { self.position += 1; }
-            },
-            _ => { self.position += 1; }
+                } else {
+                    self.position += 1;
+                }
+            }
+            _ => {
+                self.position += 1;
+            }
         }
 
         self.stacks.exit_code()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -102,7 +107,9 @@ mod tests {
     use super::Processor;
 
     macro_rules! test_path {
-        ($name:expr, $ext:expr) => (concat!("../snippets/", $name, ".", $ext));
+        ($name:expr, $ext:expr) => {
+            concat!("../snippets/", $name, ".", $ext)
+        };
     }
     macro_rules! make_input {
         ($name:expr, ) => (b"");

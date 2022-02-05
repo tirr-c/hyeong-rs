@@ -1,13 +1,12 @@
+use num::{One, Zero};
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg};
-use num::{Zero, One};
 
 #[cfg(feature = "big-rational")]
 pub use num::rational::BigRational as Rational;
 #[cfg(not(feature = "big-rational"))]
-pub use num::rational::Rational as Rational;
-
+pub use num::rational::Rational;
 
 #[derive(Clone, Debug)]
 pub enum HyeongRational {
@@ -58,8 +57,11 @@ impl HyeongRational {
         match *self {
             HyeongRational::NaN => HyeongRational::NaN,
             HyeongRational::Rational(ref r) => {
-                if r.is_zero() { HyeongRational::NaN }
-                else { r.recip().into() }
+                if r.is_zero() {
+                    HyeongRational::NaN
+                } else {
+                    r.recip().into()
+                }
             }
         }
     }
@@ -110,33 +112,34 @@ impl Display for HyeongRational {
                     if int >= unicode_bound {
                         write!(f, "너무 커엇...")
                     } else {
-                        let int = int
-                            .to_u32()
-                            .and_then(::std::char::from_u32)
-                            .unwrap();
+                        let int = int.to_u32().and_then(::std::char::from_u32).unwrap();
                         write!(f, "{}", int)
                     }
                 } else {
                     write!(f, "{}", -int)
                 }
-            },
+            }
             HyeongRational::NaN => {
                 write!(f, "너무 커엇...")
-            },
+            }
         }
     }
 }
 
 impl PartialEq for HyeongRational {
     fn eq(&self, other: &HyeongRational) -> bool {
-        if self.is_nan() || other.is_nan() { return false; }
+        if self.is_nan() || other.is_nan() {
+            return false;
+        }
         self.rational() == other.rational()
     }
 }
 
 impl PartialOrd for HyeongRational {
     fn partial_cmp(&self, other: &HyeongRational) -> Option<Ordering> {
-        if self.is_nan() || other.is_nan() { return None; }
+        if self.is_nan() || other.is_nan() {
+            return None;
+        }
         self.rational().partial_cmp(other.rational())
     }
 }
@@ -144,7 +147,9 @@ impl PartialOrd for HyeongRational {
 impl Add for HyeongRational {
     type Output = Self;
     fn add(self, rhs: HyeongRational) -> Self::Output {
-        if self.is_nan() || rhs.is_nan() { return HyeongRational::NaN; }
+        if self.is_nan() || rhs.is_nan() {
+            return HyeongRational::NaN;
+        }
         (self.into_rational() + rhs.into_rational()).into()
     }
 }
@@ -159,7 +164,9 @@ impl AddAssign for HyeongRational {
 impl Mul for HyeongRational {
     type Output = Self;
     fn mul(self, rhs: HyeongRational) -> Self::Output {
-        if self.is_nan() || rhs.is_nan() { return HyeongRational::NaN; }
+        if self.is_nan() || rhs.is_nan() {
+            return HyeongRational::NaN;
+        }
         (self.into_rational() * rhs.into_rational()).into()
     }
 }
@@ -188,7 +195,9 @@ impl Zero for HyeongRational {
     fn is_zero(&self) -> bool {
         if let HyeongRational::Rational(ref r) = *self {
             r.is_zero()
-        } else { false }
+        } else {
+            false
+        }
     }
 }
 
@@ -198,16 +207,15 @@ impl One for HyeongRational {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::{Rational, HyeongRational};
+    use super::{HyeongRational, Rational};
 
     #[test]
     fn partial_eq() {
         let three = HyeongRational::from_u32(3);
         let five = HyeongRational::from_u32(5);
-        let another_three = HyeongRational::from_u32(1+2);
+        let another_three = HyeongRational::from_u32(1 + 2);
         let nan = HyeongRational::NaN;
         let another_nan = HyeongRational::NaN;
 
@@ -222,7 +230,7 @@ mod tests {
 
         let three = HyeongRational::from_u32(3);
         let five = HyeongRational::from_u32(5);
-        let another_three = HyeongRational::from_u32(1+2);
+        let another_three = HyeongRational::from_u32(1 + 2);
         let nan = HyeongRational::NaN;
         let another_nan = HyeongRational::NaN;
 

@@ -1,9 +1,8 @@
-use std::io::{self, Read, Write};
+use super::rational::{HyeongRational, Rational};
 use super::structure::HeartTree;
-use super::rational::{Rational, HyeongRational};
 use super::utf8::read_codepoint;
-use num::{Zero, One};
-
+use num::{One, Zero};
+use std::io::{self, Read, Write};
 
 pub trait HyeongStack {
     fn push_one(&mut self, value: HyeongRational);
@@ -19,7 +18,6 @@ impl HyeongStack for Vec<HyeongRational> {
         self.pop().into()
     }
 }
-
 
 pub struct HyeongReadStack<R> {
     inner: R,
@@ -53,16 +51,13 @@ impl<R: Read> HyeongStack for HyeongReadStack<R> {
     }
 }
 
-
 pub struct HyeongWriteStack<W> {
     inner: W,
 }
 
 impl<W> HyeongWriteStack<W> {
     pub fn new(inner: W) -> Self {
-        HyeongWriteStack {
-            inner,
-        }
+        HyeongWriteStack { inner }
     }
 }
 
@@ -77,9 +72,10 @@ impl<W: Write> HyeongStack for HyeongWriteStack<W> {
         write!(&mut self.inner, "{}", value).unwrap();
     }
 
-    fn pop_one(&mut self) -> HyeongRational { HyeongRational::NaN }
+    fn pop_one(&mut self) -> HyeongRational {
+        HyeongRational::NaN
+    }
 }
-
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum HeartResult {
@@ -90,19 +86,20 @@ pub enum HeartResult {
 
 use std::collections::BTreeMap;
 pub struct StackManager<I, O, E> {
-    stdin:  HyeongReadStack<I>,
+    stdin: HyeongReadStack<I>,
     stdout: HyeongWriteStack<O>,
     stderr: HyeongWriteStack<E>,
     stacks: BTreeMap<usize, Vec<HyeongRational>>,
     selected: usize,
-    exit_code: Option<isize>
+    exit_code: Option<isize>,
 }
 
 impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
-    pub fn from_stacks(stdin:  HyeongReadStack<I>,
-                       stdout: HyeongWriteStack<O>,
-                       stderr: HyeongWriteStack<E>
-                      ) -> Self {
+    pub fn from_stacks(
+        stdin: HyeongReadStack<I>,
+        stdout: HyeongWriteStack<O>,
+        stderr: HyeongWriteStack<E>,
+    ) -> Self {
         let mut stacks = BTreeMap::new();
         stacks.insert(3, vec![]);
         StackManager {
@@ -152,7 +149,9 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn add(&mut self, count: usize, to: usize) {
-        if self.check_exit() { return; }
+        if self.check_exit() {
+            return;
+        }
         let sum = {
             let mut sum = HyeongRational::zero();
             let stack_from = self.selected_stack_mut();
@@ -165,7 +164,9 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn mul(&mut self, count: usize, to: usize) {
-        if self.check_exit() { return; }
+        if self.check_exit() {
+            return;
+        }
         let sum = {
             let mut sum = HyeongRational::one();
             let stack_from = self.selected_stack_mut();
@@ -178,7 +179,9 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn neg(&mut self, count: usize, to: usize) {
-        if self.check_exit() { return; }
+        if self.check_exit() {
+            return;
+        }
         let sum = {
             let mut temp = vec![];
             let stack_from = self.selected_stack_mut();
@@ -197,7 +200,9 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn recip(&mut self, count: usize, to: usize) {
-        if self.check_exit() { return; }
+        if self.check_exit() {
+            return;
+        }
         let sum = {
             let mut temp = vec![];
             let stack_from = self.selected_stack_mut();
@@ -216,7 +221,9 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn dup(&mut self, count: usize, into: usize) {
-        if self.check_exit() { return; }
+        if self.check_exit() {
+            return;
+        }
         let value = {
             let stack_from = self.selected_stack_mut();
             let value = stack_from.pop_one();
@@ -238,11 +245,11 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
             HeartTree::LessThan(ref l, ref r) => {
                 let into = if self.stack_less_than(target) { l } else { r };
                 self.process_hearts(into, target)
-            },
+            }
             HeartTree::Equals(ref l, ref r) => {
                 let into = if self.stack_equals(target) { l } else { r };
                 self.process_hearts(into, target)
-            },
+            }
         }
     }
 
@@ -260,8 +267,10 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
 
     fn make_stack(&mut self, id: usize) {
         match id {
-            0 | 1 | 2 => {},
-            i => { self.stacks.entry(i).or_insert_with(Vec::new); }
+            0 | 1 | 2 => {}
+            i => {
+                self.stacks.entry(i).or_insert_with(Vec::new);
+            }
         }
     }
 
@@ -270,12 +279,11 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     mod rw {
-        use super::super::super::rational::{Rational, HyeongRational};
-        use super::super::{HyeongStack, HyeongReadStack, HyeongWriteStack};
+        use super::super::super::rational::{HyeongRational, Rational};
+        use super::super::{HyeongReadStack, HyeongStack, HyeongWriteStack};
 
         #[test]
         fn read_stack_pop() {
@@ -303,7 +311,7 @@ mod tests {
                 stack.push_one(HyeongRational::from_u32('!' as u32));
                 stack.push_one(Rational::from_integer(-32isize).into());
                 stack.push_one(HyeongRational::NaN);
-                stack.push_one(Rational::new(65*3+2isize, 3isize).into());
+                stack.push_one(Rational::new(65 * 3 + 2isize, 3isize).into());
                 stack.push_one(Rational::new(-11isize, 7isize).into());
             };
             assert_eq!(&buf[..], "흑..!32너무 커엇...A2".as_bytes());

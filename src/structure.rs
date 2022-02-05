@@ -43,42 +43,51 @@ pub struct Operation {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum OperationType {
-    Push,           // 형
-    Add,            // 항
-    Multiply,       // 핫
-    Negate,         // 흣
-    Reciprocate,    // 흡
-    Duplicate,      // 흑
+    Push,        // 형
+    Add,         // 항
+    Multiply,    // 핫
+    Negate,      // 흣
+    Reciprocate, // 흡
+    Duplicate,   // 흑
 }
 
 impl Operation {
     pub fn from_chars(start: char, end: Option<char>, count: usize) -> Self {
         if let Some(c) = end {
-            assert!(match start {
-                '혀' => '엉' == end.unwrap(),
-                '하' => "앙앗".contains(end.unwrap()),
-                '흐' => "읏읍윽".contains(end.unwrap()),
-                _ => false
-            }, "Invalid start-end character pair");
-            Operation { op_type: match c {
-                '엉' => OperationType::Push,
-                '앙' => OperationType::Add,
-                '앗' => OperationType::Multiply,
-                '읏' => OperationType::Negate,
-                '읍' => OperationType::Reciprocate,
-                '윽' => OperationType::Duplicate,
-                _ => unreachable!(),
-            }, hangul_count: count }
+            assert!(
+                match start {
+                    '혀' => '엉' == end.unwrap(),
+                    '하' => "앙앗".contains(end.unwrap()),
+                    '흐' => "읏읍윽".contains(end.unwrap()),
+                    _ => false,
+                },
+                "Invalid start-end character pair"
+            );
+            Operation {
+                op_type: match c {
+                    '엉' => OperationType::Push,
+                    '앙' => OperationType::Add,
+                    '앗' => OperationType::Multiply,
+                    '읏' => OperationType::Negate,
+                    '읍' => OperationType::Reciprocate,
+                    '윽' => OperationType::Duplicate,
+                    _ => unreachable!(),
+                },
+                hangul_count: count,
+            }
         } else {
-            Operation { op_type: match start {
-                '형' => OperationType::Push,
-                '항' => OperationType::Add,
-                '핫' => OperationType::Multiply,
-                '흣' => OperationType::Negate,
-                '흡' => OperationType::Reciprocate,
-                '흑' => OperationType::Duplicate,
-                _ => panic!("Non-self-ending character without end character"),
-            }, hangul_count: 1 }
+            Operation {
+                op_type: match start {
+                    '형' => OperationType::Push,
+                    '항' => OperationType::Add,
+                    '핫' => OperationType::Multiply,
+                    '흣' => OperationType::Negate,
+                    '흡' => OperationType::Reciprocate,
+                    '흑' => OperationType::Duplicate,
+                    _ => panic!("Non-self-ending character without end character"),
+                },
+                hangul_count: 1,
+            }
         }
     }
 
@@ -92,7 +101,7 @@ impl Operation {
                 '흣' => OperationType::Negate,
                 '흡' => OperationType::Reciprocate,
                 '흑' => OperationType::Duplicate,
-                _    => panic!("Invalid character")
+                _ => panic!("Invalid character"),
             },
             hangul_count: count,
         }

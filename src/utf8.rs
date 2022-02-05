@@ -6,21 +6,36 @@ pub fn read_codepoint<R: Read>(read: &mut R) -> io::Result<u32> {
     let mut buf = [0];
     read.read_exact(&mut buf)?;
     let first_byte = buf[0];
-    let char_count =
-        if first_byte & 0x80 == 0 { 0 }
-        else if first_byte & 0xe0 == 0xc0 { 1 }
-        else if first_byte & 0xf0 == 0xe0 { 2 }
-        else if first_byte & 0xf8 == 0xf0 { 3 }
-        else { return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8 sequence")); };
-    if char_count == 0 { return Ok(first_byte as u32); }
+    let char_count = if first_byte & 0x80 == 0 {
+        0
+    } else if first_byte & 0xe0 == 0xc0 {
+        1
+    } else if first_byte & 0xf0 == 0xe0 {
+        2
+    } else if first_byte & 0xf8 == 0xf0 {
+        3
+    } else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid UTF-8 sequence",
+        ));
+    };
+    if char_count == 0 {
+        return Ok(first_byte as u32);
+    }
 
     let mut buf = vec![0; char_count];
     read.read_exact(&mut buf)?;
     if !buf.iter().all(|b| *b & 0xc0 == 0x80) {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8 sequence"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid UTF-8 sequence",
+        ));
     }
     let base = (first_byte & MASK[char_count]) as u32;
-    let result = buf.iter().fold(base, |c, &b| (c << 6) | ((b & 0x3f) as u32));
+    let result = buf
+        .iter()
+        .fold(base, |c, &b| (c << 6) | ((b & 0x3f) as u32));
     Ok(result)
 }
 

@@ -2,14 +2,13 @@
 extern crate clap;
 extern crate rshyeong;
 
+use rshyeong::{HyeongReadStack, HyeongWriteStack, Parser, Processor, StackManager};
 use std::fs::File;
-use std::io::{Read, Write, BufWriter};
-use rshyeong::{Parser, Processor, HyeongReadStack, HyeongWriteStack, StackManager};
+use std::io::{BufWriter, Read, Write};
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
     let matches = clap::App::from_yaml(yaml).get_matches();
-
 
     let source_file = matches.value_of("SOURCE").unwrap();
     let mut source = match File::open(source_file) {
@@ -55,14 +54,20 @@ fn main() {
 
     let stderr = HyeongWriteStack::new(std::io::stderr());
 
-
     let stacks = StackManager::from_stacks(stdin, stdout, stderr);
     let parser = Parser::new(&source_string);
     let processor = Processor::with_stack_manager(parser, stacks);
 
     let (exit_code, err) = processor.run();
     if let Err(e) = err {
-        if writeln!(std::io::stderr(), "Error during flushing: {}\nExit code was: {}", e, exit_code).is_err() {
+        if writeln!(
+            std::io::stderr(),
+            "Error during flushing: {}\nExit code was: {}",
+            e,
+            exit_code
+        )
+        .is_err()
+        {
             std::process::exit(3);
         }
         std::process::exit(3);
