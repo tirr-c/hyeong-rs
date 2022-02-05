@@ -34,16 +34,13 @@ impl HangulStartType {
 
     fn is_self_ending(&self) -> bool {
         use self::HangulStartType::*;
-        match *self {
-            Hyeo | Ha | Heu => false,
-            _ => true,
-        }
+        !matches!(self, Hyeo | Ha | Heu)
     }
 }
 
-impl Into<char> for HangulStartType {
-    fn into(self) -> char {
-        match self {
+impl From<HangulStartType> for char {
+    fn from(v: HangulStartType) -> char {
+        match v {
             HangulStartType::Hyeo => '혀',
             HangulStartType::Ha => '하',
             HangulStartType::Heu => '흐',
@@ -117,7 +114,7 @@ impl<'a> Parser<'a> {
         self.token_cache.clear();
         loop {
             let mut start = None;
-            while let Some(c) = self.code.next() {
+            for c in &mut self.code {
                 if "형항핫흣흡흑혀하흐".contains(c) {
                     start = HangulStartType::from_char(c);
                     break;
@@ -139,7 +136,7 @@ impl<'a> Parser<'a> {
             if let Some((count, c)) = Parser::find_matching_end(start, &mut temp_iter) {
                 self.code = temp_iter;
                 let length = count + 1;
-                return Some(Operation::from_chars(start.into(), Some(c), length));
+                return Some(Operation::from_chars(start.into(), Some(c), length as u64));
             }
         }
     }
@@ -150,7 +147,7 @@ impl<'a> Parser<'a> {
     ) -> Option<(usize, char)> {
         let mut cnt = 0;
         for c in iter {
-            if c >= '가' && c <= '힣' {
+            if ('가'..='힣').contains(&c) {
                 cnt += 1;
             }
             let end = match start {
@@ -180,10 +177,10 @@ impl<'a> Iterator for Parser<'a> {
         self.operation_cache = next_op;
 
         // dots
-        let tokens = self.token_cache.iter().take_while(|token| match **token {
-            Token::Dot | Token::ThreeDots => true,
-            _ => false,
-        });
+        let tokens = self
+            .token_cache
+            .iter()
+            .take_while(|token| matches!(token, Token::Dot | Token::ThreeDots));
         let dots = tokens.fold(0, |i, token| match *token {
             Token::Dot => i + 1,
             Token::ThreeDots => i + 3,
@@ -193,14 +190,14 @@ impl<'a> Iterator for Parser<'a> {
         let mut current_heart = None;
         let mut tree = vec![];
         let mut op_count = 0;
-        let hearts = self.token_cache.iter().filter(|token| match **token {
-            Token::Dot | Token::ThreeDots => false,
-            _ => true,
-        });
+        let hearts = self
+            .token_cache
+            .iter()
+            .filter(|token| !matches!(token, Token::Dot | Token::ThreeDots));
         for token in hearts {
             match *token {
                 Token::Heart(id) => {
-                    current_heart = current_heart.or_else(|| Some(HeartTree::Heart(id)));
+                    current_heart = current_heart.or_else(|| Some(HeartTree::Heart(id as u64)));
                 }
                 Token::ReturnHeart => {
                     current_heart = current_heart.or(Some(HeartTree::Return));
@@ -436,8 +433,8 @@ mod tests {
 
         #[test]
         fn hearts() {
-            let black_heart_suit_idx = HEART_MARKS.iter().position(|c| *c == '♥').unwrap();
-            let sparkling_heart_idx = HEART_MARKS.iter().position(|c| *c == '💖').unwrap();
+            let black_heart_suit_idx = HEART_MARKS.iter().position(|c| *c == '♥').unwrap() as u64;
+            let sparkling_heart_idx = HEART_MARKS.iter().position(|c| *c == '💖').unwrap() as u64;
 
             // Testcase from https://github.com/xnuk/hyeong-testcases
             let mut parser = Parser::new("하앗....♥♡!");

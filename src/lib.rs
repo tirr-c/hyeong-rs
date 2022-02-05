@@ -1,5 +1,3 @@
-extern crate num;
-
 mod parser;
 mod processor;
 mod rational;

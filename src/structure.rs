@@ -1,16 +1,16 @@
 #[derive(Debug, PartialEq)]
 pub struct Instruction {
     op: Operation,
-    dots: usize,
+    dots: u64,
     hearts: HeartTree,
 }
 
 impl Instruction {
-    pub fn new(op: Operation, dots: usize, hearts: HeartTree) -> Self {
-        Instruction {
-            op: op,
-            dots: dots,
-            hearts: hearts,
+    pub fn new(op: Operation, dots: u64, hearts: HeartTree) -> Self {
+        Self {
+            op,
+            dots,
+            hearts,
         }
     }
 
@@ -18,15 +18,15 @@ impl Instruction {
         self.op.op_type
     }
 
-    pub fn hangul_count(&self) -> usize {
+    pub fn hangul_count(&self) -> u64 {
         self.op.hangul_count
     }
 
-    pub fn dots(&self) -> usize {
+    pub fn dots(&self) -> u64 {
         self.dots
     }
 
-    pub fn hangul_times_dots(&self) -> usize {
+    pub fn hangul_times_dots(&self) -> u64 {
         self.op.hangul_count * self.dots
     }
 
@@ -38,7 +38,7 @@ impl Instruction {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Operation {
     op_type: OperationType,
-    hangul_count: usize,
+    hangul_count: u64,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -52,7 +52,7 @@ pub enum OperationType {
 }
 
 impl Operation {
-    pub fn from_chars(start: char, end: Option<char>, count: usize) -> Self {
+    pub fn from_chars(start: char, end: Option<char>, count: u64) -> Self {
         if let Some(c) = end {
             assert!(
                 match start {
@@ -92,7 +92,7 @@ impl Operation {
     }
 
     #[cfg(test)]
-    pub fn from_single_char(op: char, count: usize) -> Self {
+    pub fn from_single_char(op: char, count: u64) -> Self {
         Operation {
             op_type: match op {
                 '형' => OperationType::Push,
@@ -110,7 +110,7 @@ impl Operation {
 
 #[derive(Debug, PartialEq)]
 pub enum HeartTree {
-    Heart(usize),
+    Heart(u64),
     Return,
     LessThan(Box<HeartTree>, Box<HeartTree>),
     Equals(Box<HeartTree>, Box<HeartTree>),

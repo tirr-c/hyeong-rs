@@ -15,10 +15,13 @@ travis-ci = { repository = "tirr-c/hyeong-rs" }
 [features]
 big-rational = []
 
-[dependencies.num]
-version = "0.1.36"
+[dependencies]
+num-traits = "0.2.14"
+
+[dependencies.num-rational]
+version = "0.4.0"
 default-features = false
-features = ["bigint", "rational"]
+features = ["num-bigint"]
 
 [dependencies.clap]
 version = "3.0.14"

@@ -9,16 +9,16 @@ pub struct Processor<P, I: Read, O: Write, E: Write> {
     position: usize,
     stacks: StackManager<I, O, E>,
     last_jump: Option<usize>,
-    labels: HashMap<(usize, usize), usize>,
+    labels: HashMap<(u64, u64), usize>,
 }
 
 impl<P, I: Read, O: Write, E: Write> Processor<P, I, O, E> {
     pub fn with_stack_manager(inner: P, stacks: StackManager<I, O, E>) -> Self {
         Processor {
-            inner: inner,
+            inner,
             instructions: vec![],
             position: 0,
-            stacks: stacks,
+            stacks,
             last_jump: None,
             labels: HashMap::new(),
         }

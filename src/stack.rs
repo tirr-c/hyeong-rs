@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::io::prelude::*;
 
-use num::{One, Zero};
+use num_traits::{One, Zero};
 
-use super::rational::{HyeongRational, Rational};
+use super::rational::HyeongRational;
 use super::structure::HeartTree;
 use super::utf8::read_codepoint;
 
@@ -44,7 +44,7 @@ impl<R: Read> HyeongStack for HyeongReadStack<R> {
     fn pop_one(&mut self) -> HyeongRational {
         if self.stack.is_empty() {
             if let Ok(c) = read_codepoint(&mut self.inner) {
-                HyeongRational::from_u32(c)
+                HyeongRational::from_u64(c as u64)
             } else {
                 HyeongRational::NaN
             }
@@ -82,7 +82,7 @@ impl<W: Write> HyeongStack for HyeongWriteStack<W> {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum HeartResult {
-    Heart(usize),
+    Heart(u64),
     Return,
     Nil,
 }
@@ -91,8 +91,8 @@ pub struct StackManager<I, O, E> {
     stdin: HyeongReadStack<I>,
     stdout: HyeongWriteStack<O>,
     stderr: HyeongWriteStack<E>,
-    stacks: HashMap<usize, Vec<HyeongRational>>,
-    selected: usize,
+    stacks: HashMap<u64, Vec<HyeongRational>>,
+    selected: u64,
     exit_code: Option<isize>,
 }
 
@@ -131,7 +131,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         self.stack_mut(id)
     }
 
-    fn stack_mut(&mut self, id: usize) -> &mut dyn HyeongStack {
+    fn stack_mut(&mut self, id: u64) -> &mut dyn HyeongStack {
         self.make_stack(id);
         match id {
             0 => &mut self.stdin,
@@ -145,12 +145,12 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         self.exit_code
     }
 
-    pub fn push(&mut self, hangul: usize, dots: usize) {
-        let value = Rational::from_integer((hangul * dots) as isize);
-        self.selected_stack_mut().push_one(value.into());
+    pub fn push(&mut self, hangul: u64, dots: u64) {
+        let value = HyeongRational::from_i64((hangul * dots) as i64);
+        self.selected_stack_mut().push_one(value);
     }
 
-    pub fn add(&mut self, count: usize, to: usize) {
+    pub fn add(&mut self, count: u64, to: u64) {
         if self.check_exit() {
             return;
         }
@@ -165,7 +165,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         self.stack_mut(to).push_one(sum);
     }
 
-    pub fn mul(&mut self, count: usize, to: usize) {
+    pub fn mul(&mut self, count: u64, to: u64) {
         if self.check_exit() {
             return;
         }
@@ -180,7 +180,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         self.stack_mut(to).push_one(sum);
     }
 
-    pub fn neg(&mut self, count: usize, to: usize) {
+    pub fn neg(&mut self, count: u64, to: u64) {
         if self.check_exit() {
             return;
         }
@@ -200,7 +200,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         self.stack_mut(to).push_one(sum);
     }
 
-    pub fn recip(&mut self, count: usize, to: usize) {
+    pub fn recip(&mut self, count: u64, to: u64) {
         if self.check_exit() {
             return;
         }
@@ -220,7 +220,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         self.stack_mut(to).push_one(sum);
     }
 
-    pub fn dup(&mut self, count: usize, into: usize) {
+    pub fn dup(&mut self, count: u64, into: u64) {
         if self.check_exit() {
             return;
         }
@@ -237,7 +237,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         }
     }
 
-    pub fn process_hearts(&mut self, heart: &HeartTree, target: usize) -> HeartResult {
+    pub fn process_hearts(&mut self, heart: &HeartTree, target: u64) -> HeartResult {
         match heart {
             HeartTree::Heart(id) => HeartResult::Heart(*id),
             HeartTree::Return => HeartResult::Return,
@@ -253,19 +253,19 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         }
     }
 
-    fn stack_less_than(&mut self, target: usize) -> bool {
-        let target = HyeongRational::from_usize(target);
+    fn stack_less_than(&mut self, target: u64) -> bool {
+        let target = HyeongRational::from_u64(target);
         let value = self.selected_stack_mut().pop_one();
         value < target
     }
 
-    fn stack_equals(&mut self, target: usize) -> bool {
-        let target = HyeongRational::from_usize(target);
+    fn stack_equals(&mut self, target: u64) -> bool {
+        let target = HyeongRational::from_u64(target);
         let value = self.selected_stack_mut().pop_one();
         value == target
     }
 
-    fn make_stack(&mut self, id: usize) {
+    fn make_stack(&mut self, id: u64) {
         match id {
             0 | 1 | 2 => {}
             i => {
@@ -282,21 +282,21 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
 #[cfg(test)]
 mod tests {
     mod rw {
-        use crate::rational::{HyeongRational, Rational};
+        use crate::rational::HyeongRational;
         use crate::stack::{HyeongReadStack, HyeongStack, HyeongWriteStack};
 
         #[test]
         fn read_stack_pop() {
             let test_str = "하앗...💕";
             let mut stack = HyeongReadStack::new(test_str.as_bytes());
-            assert_eq!(stack.pop_one(), HyeongRational::from_u32('하' as u32));
-            assert_eq!(stack.pop_one(), HyeongRational::from_u32('앗' as u32));
-            assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
-            stack.push_one(HyeongRational::from_u32(14));
-            assert_eq!(stack.pop_one(), HyeongRational::from_u32(14));
-            assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
-            assert_eq!(stack.pop_one(), HyeongRational::from_u32('.' as u32));
-            assert_eq!(stack.pop_one(), HyeongRational::from_u32('💕' as u32));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u64('하' as u32 as u64));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u64('앗' as u32 as u64));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u64('.' as u32 as u64));
+            stack.push_one(HyeongRational::from_u64(14));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u64(14));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u64('.' as u32 as u64));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u64('.' as u32 as u64));
+            assert_eq!(stack.pop_one(), HyeongRational::from_u64('💕' as u32 as u64));
             assert!(stack.pop_one().is_nan());
         }
 
@@ -305,14 +305,14 @@ mod tests {
             let mut buf = vec![];
             {
                 let mut stack = HyeongWriteStack::new(&mut buf);
-                stack.push_one(HyeongRational::from_u32('흑' as u32));
-                stack.push_one(HyeongRational::from_u32('.' as u32));
-                stack.push_one(HyeongRational::from_u32('.' as u32));
-                stack.push_one(HyeongRational::from_u32('!' as u32));
-                stack.push_one(Rational::from_integer(-32isize).into());
+                stack.push_one(HyeongRational::from_u64('흑' as u32 as u64));
+                stack.push_one(HyeongRational::from_u64('.' as u32 as u64));
+                stack.push_one(HyeongRational::from_u64('.' as u32 as u64));
+                stack.push_one(HyeongRational::from_u64('!' as u32 as u64));
+                stack.push_one(HyeongRational::from_i64(-32));
                 stack.push_one(HyeongRational::NaN);
-                stack.push_one(Rational::new(65 * 3 + 2isize, 3isize).into());
-                stack.push_one(Rational::new(-11isize, 7isize).into());
+                stack.push_one(HyeongRational::new_i64(65 * 3 + 2, 3));
+                stack.push_one(HyeongRational::new_i64(-11, 7));
             };
             assert_eq!(&buf[..], "흑..!32너무 커엇...A2".as_bytes());
         }
