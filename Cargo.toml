@@ -1,6 +1,6 @@
 [package]
 name = "rshyeong"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Wonwoo Choi <chwo9843@gmail.com>"]
 description = "Hyeong-lang interpreter"
 repository = "https://github.com/tirr-c/hyeong-rs.git"
