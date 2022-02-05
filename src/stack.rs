@@ -29,7 +29,7 @@ pub struct HyeongReadStack<R> {
 impl<R> HyeongReadStack<R> {
     pub fn new(inner: R) -> Self {
         HyeongReadStack {
-            inner: inner,
+            inner,
             stack: vec![],
         }
     }
@@ -61,7 +61,7 @@ pub struct HyeongWriteStack<W> {
 impl<W> HyeongWriteStack<W> {
     pub fn new(inner: W) -> Self {
         HyeongWriteStack {
-            inner: inner,
+            inner,
         }
     }
 }
@@ -106,10 +106,10 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         let mut stacks = BTreeMap::new();
         stacks.insert(3, vec![]);
         StackManager {
-            stdin: stdin,
-            stdout: stdout,
-            stderr: stderr,
-            stacks: stacks,
+            stdin,
+            stdout,
+            stderr,
+            stacks,
             selected: 3,
             exit_code: None,
         }
@@ -127,12 +127,12 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
         }
     }
 
-    fn selected_stack_mut(&mut self) -> &mut HyeongStack {
+    fn selected_stack_mut(&mut self) -> &mut dyn HyeongStack {
         let id = self.selected;
         self.stack_mut(id)
     }
 
-    fn stack_mut(&mut self, id: usize) -> &mut HyeongStack {
+    fn stack_mut(&mut self, id: usize) -> &mut dyn HyeongStack {
         self.make_stack(id);
         match id {
             0 => &mut self.stdin,
@@ -147,7 +147,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
     }
 
     pub fn push(&mut self, hangul: usize, dots: usize) {
-        let value = Rational::from_integer(((hangul * dots) as isize).into());
+        let value = Rational::from_integer((hangul * dots) as isize);
         self.selected_stack_mut().push_one(value.into());
     }
 
@@ -260,7 +260,7 @@ impl<I: Read, O: Write, E: Write> StackManager<I, O, E> {
 
     fn make_stack(&mut self, id: usize) {
         match id {
-            0 | 1 | 2 => { return; },
+            0 | 1 | 2 => {},
             i => { self.stacks.entry(i).or_insert_with(Vec::new); }
         }
     }
@@ -301,10 +301,10 @@ mod tests {
                 stack.push_one(HyeongRational::from_u32('.' as u32));
                 stack.push_one(HyeongRational::from_u32('.' as u32));
                 stack.push_one(HyeongRational::from_u32('!' as u32));
-                stack.push_one(Rational::from_integer((-32 as isize).into()).into());
+                stack.push_one(Rational::from_integer(-32isize).into());
                 stack.push_one(HyeongRational::NaN);
-                stack.push_one(Rational::new((65*3+2isize).into(), 3isize.into()).into());
-                stack.push_one(Rational::new((-11isize).into(), 7isize.into()).into());
+                stack.push_one(Rational::new(65*3+2isize, 3isize).into());
+                stack.push_one(Rational::new(-11isize, 7isize).into());
             };
             assert_eq!(&buf[..], "흑..!32너무 커엇...A2".as_bytes());
         }

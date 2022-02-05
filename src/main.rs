@@ -26,7 +26,7 @@ fn main() {
     }
 
     let input_file = matches.value_of("input").unwrap_or("-");
-    let stdin: HyeongReadStack<Box<Read>> = if input_file == "-" {
+    let stdin: HyeongReadStack<Box<dyn Read>> = if input_file == "-" {
         HyeongReadStack::new(Box::new(std::io::stdin()))
     } else {
         let file = match File::open(input_file) {
@@ -40,7 +40,7 @@ fn main() {
     };
 
     let output_file = matches.value_of("output").unwrap_or("-");
-    let stdout: HyeongWriteStack<Box<Write>> = if output_file == "-" {
+    let stdout: HyeongWriteStack<Box<dyn Write>> = if output_file == "-" {
         HyeongWriteStack::new(Box::new(std::io::stdout()))
     } else {
         let file = match File::create(output_file) {
